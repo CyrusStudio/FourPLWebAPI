@@ -23,24 +23,21 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
-  <!-- SAP NCo 3.1 DLL 引用 (需使用者手動放入 lib 資料夾) -->
-  <ItemGroup Condition="Exists('..\lib\sapnco.dll')">
+  <!-- SAP NCo 3.1 DLL 引用 (放置於 src/lib 資料夾) -->
+  <ItemGroup Condition="Exists('lib\sapnco.dll')">
     <Reference Include="sapnco">
-      <HintPath>..\lib\sapnco.dll</HintPath>
+      <HintPath>lib\sapnco.dll</HintPath>
     </Reference>
     <Reference Include="sapnco_utils">
-      <HintPath>..\lib\sapnco_utils.dll</HintPath>
+      <HintPath>lib\sapnco_utils.dll</HintPath>
     </Reference>
   </ItemGroup>
 
-  <!-- 複製 SAP NCo DLL 到輸出目錄 -->
   <ItemGroup>
-    <None Update="..\lib\sapnco.dll" Condition="Exists('..\lib\sapnco.dll')">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="..\lib\sapnco_utils.dll" Condition="Exists('..\lib\sapnco_utils.dll')">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Content Include="lib\ijwhost.dll">
+      <Link>%(Filename)%(Extension)</Link> 
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
-
 </Project>
