@@ -153,12 +153,17 @@ public class MockSapHelper : ISapHelper
     /// <summary>
     /// 生成模擬的表格資料
     /// </summary>
+    /// <summary>
+    /// 生成模擬的表格資料 (對應 ZT4PL_BILLING)
+    /// </summary>
     private List<Dictionary<string, object>> GenerateMockTableData()
     {
         return new List<Dictionary<string, object>>
         {
-            new() { { "WA", "FIELD1|FIELD2|FIELD3" } },
-            new() { { "WA", "VALUE1|VALUE2|VALUE3" } }
+            // 回傳 15 個欄位，以分號分隔
+            // "ARSHPNO;ARSSHPIM;MATNR;VRKME;FKDAT;INVONO;INVODATE;KWMENG;CHARG;KBETR_ZTW2;ARBLPNO;KUNNR;VFDAT;FORMNO;KUNNR_SH"
+            new() { { "WA", "SHP001;ITEM01;MAT-A;PC;20240101;INV-001;20240105;10;BATCH01;1000;BP001;CUST01;20240201;FORM01;SH_CUST01" } },
+            new() { { "WA", "SHP002;ITEM02;MAT-B;KG;20240102;INV-002;20240106;20;BATCH02;2000;BP002;CUST02;20240202;FORM02;SH_CUST02" } }
         };
     }
 

@@ -1,7 +1,6 @@
 using System.Reflection;
 using FourPLWebAPI.Infrastructure;
 using FourPLWebAPI.Infrastructure.Scheduling;
-using FourPLWebAPI.Jobs;
 using FourPLWebAPI.Services;
 using Hangfire;
 using Hangfire.SqlServer;
@@ -90,10 +89,7 @@ public class Program
             }
 
             // 註冊 Business Services
-            builder.Services.AddScoped<ICabinetExportService, CabinetExportService>();
-
-            // 註冊 Jobs
-            builder.Services.AddScoped<CabinetExportJob>();
+            builder.Services.AddScoped<IBillingService, BillingService>();
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
