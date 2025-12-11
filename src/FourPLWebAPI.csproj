@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 強制 64-bit 架構，SAP NCo 3.1 需求 -->
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- 產生 XML 文件供 Swagger 使用 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.11.1" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.22" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <!-- SAP NCo 3.1 DLL 引用 (放置於 src/lib 資料夾) -->
+  <ItemGroup Condition="Exists('lib\sapnco.dll')">
+    <Reference Include="sapnco">
+      <HintPath>lib\sapnco.dll</HintPath>
+    </Reference>
+    <Reference Include="sapnco_utils">
+      <HintPath>lib\sapnco_utils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+<<<<<<< HEAD
+  <ItemGroup>
+    <Content Include="lib\ijwhost.dll">
+      <Link>%(Filename)%(Extension)</Link> 
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+=======
+  <!-- 複製 SAP NCo 所有 DLL 到輸出目錄 -->
+  <ItemGroup>
+    <None Include="lib\*.dll" Condition="Exists('lib\sapnco.dll')">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+>>>>>>> 64d6fe872d70c846c2250b0fb95432dbdd71a493
+  </ItemGroup>
+</Project>

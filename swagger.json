@@ -1,0 +1,231 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "FourPL Web API",
+    "description": "SAP 整合中間件 API - 供 Power Automate 呼叫的整合服務",
+    "contact": {
+      "name": "FourPL Team",
+      "email": "support@fourpl.com"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Integration/cabinet-export": {
+      "post": {
+        "tags": [
+          "Integration"
+        ],
+        "summary": "機櫃資料匯出",
+        "description": "執行完整的機櫃資料匯出流程：\r\n1. 從 SQL Server 查詢 SAP 呼叫參數\r\n2. 呼叫 SAP RFC 取得機櫃資料\r\n3. 轉換為 XML 格式\r\n4. 上傳至 sFTP 伺服器\r\n\r\n範例請求：\r\n\r\n    POST /api/integration/cabinet-export\r\n    {\r\n        \"requestId\": \"REQ-2024-001\",\r\n        \"organizationCode\": \"ORG001\",\r\n        \"cabinetType\": \"RACK\",\r\n        \"dataCenterCode\": \"DC-TPE\",\r\n        \"startDate\": \"20240101\",\r\n        \"endDate\": \"20241231\",\r\n        \"includeInactive\": false\r\n    }",
+        "requestBody": {
+          "description": "匯出請求參數",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CabinetExportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CabinetExportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CabinetExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "匯出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CabinetExportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "請求參數錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CabinetExportResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "處理過程發生錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CabinetExportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Integration/health": {
+      "get": {
+        "tags": [
+          "Integration"
+        ],
+        "summary": "健康檢查端點",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CabinetExportRequest": {
+        "required": [
+          "organizationCode",
+          "requestId"
+        ],
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "minLength": 1,
+            "type": "string",
+            "description": "請求 ID (用於追蹤與日誌)"
+          },
+          "organizationCode": {
+            "minLength": 1,
+            "type": "string",
+            "description": "組織代碼"
+          },
+          "cabinetType": {
+            "type": "string",
+            "description": "機櫃類型篩選 (可選)",
+            "nullable": true
+          },
+          "dataCenterCode": {
+            "type": "string",
+            "description": "資料中心代碼 (可選)",
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "description": "起始日期 (yyyyMMdd 格式)",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "結束日期 (yyyyMMdd 格式)",
+            "nullable": true
+          },
+          "includeInactive": {
+            "type": "boolean",
+            "description": "是否包含已停用的機櫃"
+          },
+          "customUploadPath": {
+            "type": "string",
+            "description": "自訂 sFTP 上傳路徑 (可選，若未指定則使用預設路徑)",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "機櫃匯出請求模型\r\n用於 POST /api/integration/cabinet-export 端點"
+      },
+      "CabinetExportResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "是否成功"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "請求 ID (與請求對應)",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "訊息 (成功或錯誤訊息)",
+            "nullable": true
+          },
+          "processedCount": {
+            "type": "integer",
+            "description": "處理的機櫃數量",
+            "format": "int32"
+          },
+          "xmlFileName": {
+            "type": "string",
+            "description": "產生的 XML 檔案名稱",
+            "nullable": true
+          },
+          "uploadedPath": {
+            "type": "string",
+            "description": "sFTP 上傳路徑",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "description": "處理開始時間",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "處理結束時間",
+            "format": "date-time"
+          },
+          "elapsedMilliseconds": {
+            "type": "integer",
+            "description": "處理耗時 (毫秒)",
+            "format": "int64",
+            "readOnly": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "詳細錯誤資訊 (若有)",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "機櫃匯出回應模型"
+      },
+      "HealthCheckResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "狀態",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "時間戳記",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "string",
+            "description": "API 版本",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "健康檢查回應模型"
+      }
+    }
+  }
+}

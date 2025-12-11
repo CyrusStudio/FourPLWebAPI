@@ -1,0 +1,236 @@
+
+**** Log file opened by process 26256 at 2025-12-11 15:53:14 (UTC+08:00 台北標準時間)
+
+SAP .NET Connector 3.1 with file version 3.1.6.0 running on 64-bit .NET Framework 8.0.22
+Program: C:\Lotus\FourPLWebAPI\src\bin\Debug\net8.0\FourPLWebAPI.exe
+Thread Name: .NET TP Worker
+Working directory: C:\Lotus\FourPLWebAPI\src
+Trace directory: .\
+Trace encoding: utf-8
+Operating system: Windows 10 Enterprise 64-bit 
+Processor: 16x AMD64 (or x64)
+SAP release: 789, Kernel release: 789, Kernel patch level: 413
+Hostname: TW-LL00372, IP address: 169.254.104.32, IP_v6 address: fe80::7fd2:70c7:71bd:8d89
+Locale: zh-TW (number decimal separator: ".", number group separator: ",", negative sign: "-")
+
+Default trace level: None
+
+>> Error entry 2025-12-11 15:53:14.737 [Thread 9 (.NET TP Worker)]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:53:14.887 [Thread 9 (.NET TP Worker)]
+[ASHOST=172.29.40.106 SYSNR=00 SYSID=S4P USER=RFC_BPM_NT PASSWD=******** CLIENT=100 LANG=EN POOL_SIZE=5 NAME=FourPL_SAP]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+
+**** Log file opened by process 1252 at 2025-12-11 15:54:23 (UTC+08:00 台北標準時間)
+
+SAP .NET Connector 3.1 with file version 3.1.6.0 running on 64-bit .NET Framework 8.0.22
+Program: C:\Lotus\FourPLWebAPI\src\bin\Debug\net8.0\FourPLWebAPI.exe
+Thread Name: .NET TP Worker
+Working directory: C:\Lotus\FourPLWebAPI\src
+Trace directory: .\
+Trace encoding: utf-8
+Operating system: Windows 10 Enterprise 64-bit 
+Processor: 16x AMD64 (or x64)
+SAP release: 789, Kernel release: 789, Kernel patch level: 413
+Hostname: TW-LL00372, IP address: 169.254.104.32, IP_v6 address: fe80::7fd2:70c7:71bd:8d89
+Locale: zh-TW (number decimal separator: ".", number group separator: ",", negative sign: "-")
+
+Default trace level: None
+
+>> Error entry 2025-12-11 15:54:23.316 [Thread 10 (.NET TP Worker)]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:54:23.410 [Thread 10 (.NET TP Worker)]
+[ASHOST=172.29.40.106 SYSNR=00 SYSID=S4P USER=RFC_BPM_NT PASSWD=******** CLIENT=100 LANG=EN POOL_SIZE=5 NAME=FourPL_SAP]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+
+**** Log file opened by process 26840 at 2025-12-11 15:57:46 (UTC+08:00 台北標準時間)
+
+SAP .NET Connector 3.1 with file version 3.1.6.0 running on 64-bit .NET Framework 8.0.22
+Program: C:\Lotus\FourPLWebAPI\src\bin\Debug\net8.0\FourPLWebAPI.exe
+Thread Name: .NET TP Worker
+Working directory: C:\Lotus\FourPLWebAPI\src
+Trace directory: .\
+Trace encoding: utf-8
+Operating system: Windows 10 Enterprise 64-bit 
+Processor: 16x AMD64 (or x64)
+SAP release: 789, Kernel release: 789, Kernel patch level: 413
+Hostname: TW-LL00372, IP address: 169.254.104.32, IP_v6 address: fe80::7fd2:70c7:71bd:8d89
+Locale: zh-TW (number decimal separator: ".", number group separator: ",", negative sign: "-")
+
+Default trace level: None
+
+>> Error entry 2025-12-11 15:57:46.923 [Thread 10 (.NET TP Worker)]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:57:47.021 [Thread 10 (.NET TP Worker)]
+[ASHOST=172.29.40.106 SYSNR=00 SYSID=S4P USER=RFC_BPM_NT PASSWD=******** CLIENT=100 LANG=EN POOL_SIZE=5 NAME=FourPL_SAP]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:57:51.811 [Thread 10 (.NET TP Worker)]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:57:51.813 [Thread 10 (.NET TP Worker)]
+[ASHOST=172.29.40.106 SYSNR=00 SYSID=S4P USER=RFC_BPM_NT PASSWD=******** CLIENT=100 LANG=EN POOL_SIZE=5 NAME=FourPL_SAP]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:58:08.057 [Thread 5 (.NET TP Worker)]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+>> Error entry 2025-12-11 15:58:08.060 [Thread 5 (.NET TP Worker)]
+[ASHOST=172.29.40.106 SYSNR=00 SYSID=S4P USER=RFC_BPM_NT PASSWD=******** CLIENT=100 LANG=EN POOL_SIZE=5 NAME=FourPL_SAP]
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+   at FourPLWebAPI.Infrastructure.SapHelper.<>c__DisplayClass3_0.<ExecuteRfcAsync>b__0() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 41
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()

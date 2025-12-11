@@ -1,0 +1,895 @@
+2025-12-11 14:30:28.563 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 14:30:28.749 +08:00 [WRN] SAP Mock 模式已啟用 - 使用模擬資料
+2025-12-11 14:30:28.751 +08:00 [INF] Hangfire 已設定完成
+2025-12-11 14:30:28.859 +08:00 [INF] Start installing Hangfire SQL objects...
+2025-12-11 14:30:43.990 +08:00 [WRN] An exception occurred while trying to perform the migration. Retrying...
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.Connect(ServerInfo serverInfo, SqlInternalConnectionTds connHandler, TimeoutTimer timeout, SqlConnectionString connectionOptions, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.004 +08:00 [WRN] An exception occurred while trying to perform the migration. Retrying...
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.005 +08:00 [WRN] An exception occurred while trying to perform the migration.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.005 +08:00 [WRN] Was unable to perform the Hangfire schema migration due to an exception. Ignore this message unless you've just installed or upgraded Hangfire.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.006 +08:00 [ERR] Was unable to use the TryAutoDetectSchemaDependentOptions option due to an exception.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TResult](DbConnection dedicatedConnection, Func`3 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 279
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 495
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.010 +08:00 [INF] Hangfire Dashboard 已啟用: /hangfire
+2025-12-11 14:30:44.046 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 14:30:44.057 +08:00 [INF] 排程同步服務啟動
+2025-12-11 14:30:44.058 +08:00 [DBG] 開始同步排程設定...
+2025-12-11 14:30:44.064 +08:00 [DBG] 執行 SQL 查詢: 
+            SELECT JobId, CronExpression, JobType, IsActive, Description, LastModified
+            FROM App_ScheduleConfig
+            WHERE IsActive = 1
+2025-12-11 14:30:44.065 +08:00 [ERR] 排程同步失敗
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.InternalOpenAsync(SqlConnectionOverrides overrides, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 34
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 36
+   at FourPLWebAPI.Infrastructure.Scheduling.ScheduleSyncService.GetScheduleConfigsAsync(ISqlHelper sqlHelper) in C:\Lotus\FourPLWebAPI\src\Infrastructure\Scheduling\ScheduleSyncService.cs:line 144
+   at FourPLWebAPI.Infrastructure.Scheduling.ScheduleSyncService.SyncSchedulesAsync() in C:\Lotus\FourPLWebAPI\src\Infrastructure\Scheduling\ScheduleSyncService.cs:line 88
+   at FourPLWebAPI.Infrastructure.Scheduling.ScheduleSyncService.DoSync(Object state) in C:\Lotus\FourPLWebAPI\src\Infrastructure\Scheduling\ScheduleSyncService.cs:line 70
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 14:30:44.095 +08:00 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5155: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+ ---> System.Net.Sockets.SocketException (10048): 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2025-12-11 14:30:44.103 +08:00 [FTL] 應用程式啟動失敗
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5155: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+ ---> System.Net.Sockets.SocketException (10048): 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+   at Microsoft.Extensions.Hosting.Internal.Host.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 182
+2025-12-11 14:31:12.105 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 14:31:12.296 +08:00 [WRN] SAP Mock 模式已啟用 - 使用模擬資料
+2025-12-11 14:31:12.297 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 14:31:12.462 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 14:31:12.559 +08:00 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5155: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+ ---> System.Net.Sockets.SocketException (10048): 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2025-12-11 14:31:12.592 +08:00 [FTL] 應用程式啟動失敗
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5155: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+ ---> System.Net.Sockets.SocketException (10048): 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+   at Microsoft.Extensions.Hosting.Internal.Host.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 182
+2025-12-11 14:31:38.663 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 14:31:38.844 +08:00 [WRN] SAP Mock 模式已啟用 - 使用模擬資料
+2025-12-11 14:31:38.844 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 14:31:39.024 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 14:31:39.129 +08:00 [INF] Now listening on: http://localhost:5155
+2025-12-11 14:31:39.137 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 14:31:39.138 +08:00 [INF] Hosting environment: Development
+2025-12-11 14:31:39.138 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:12:19.669 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:12:19.903 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:12:19.909 +08:00 [INF] Hangfire 已設定完成
+2025-12-11 15:12:20.034 +08:00 [INF] Start installing Hangfire SQL objects...
+2025-12-11 15:12:35.179 +08:00 [WRN] An exception occurred while trying to perform the migration. Retrying...
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.Connect(ServerInfo serverInfo, SqlInternalConnectionTds connHandler, TimeoutTimer timeout, SqlConnectionString connectionOptions, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:12:35.242 +08:00 [WRN] An exception occurred while trying to perform the migration. Retrying...
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:12:35.246 +08:00 [WRN] An exception occurred while trying to perform the migration.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:12:35.251 +08:00 [WRN] Was unable to perform the Hangfire schema migration due to an exception. Ignore this message unless you've just installed or upgraded Hangfire.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection(DbConnection dedicatedConnection, Action`2 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 268
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 465
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:12:35.263 +08:00 [ERR] Was unable to use the TryAutoDetectSchemaDependentOptions option due to an exception.
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, TaskCompletionSource`1 taskCompletionSource, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.TryGetConnection(DbConnection owningConnection, TaskCompletionSource`1 retry, DbConnectionOptions userOptions, DbConnectionInternal oldConnection, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at Hangfire.SqlServer.SqlServerStorage.CreateAndOpenConnection() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 406
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TContext,TResult](DbConnection dedicatedConnection, Func`4 func, TContext context) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 291
+   at Hangfire.SqlServer.SqlServerStorage.UseConnection[TResult](DbConnection dedicatedConnection, Func`3 action) in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 279
+   at Hangfire.SqlServer.SqlServerStorage.Initialize() in C:\projects\hangfire-525\src\Hangfire.SqlServer\SqlServerStorage.cs:line 495
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:12:35.290 +08:00 [INF] Hangfire Dashboard 已啟用: /hangfire
+2025-12-11 15:12:35.373 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:14:13.774 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:14:14.462 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:14:14.466 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:14:14.671 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:15:28.492 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:15:28.890 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:15:28.891 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:15:29.041 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:18:14.019 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:18:14.757 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:18:14.759 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:18:14.927 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:19:22.407 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:19:22.627 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:19:22.632 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:19:22.809 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:22:53.935 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:22:54.245 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:22:54.246 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:22:54.494 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 15:22:54.818 +08:00 [INF] Now listening on: http://localhost:5155
+2025-12-11 15:22:54.828 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 15:22:54.828 +08:00 [INF] Hosting environment: Development
+2025-12-11 15:22:54.828 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:26:28.138 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 15:26:28.263 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:26:28.474 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:26:28.481 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS EQ 'S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE >= 'string'
+2025-12-11 15:26:28.486 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:26:28.557 +08:00 [WRN] 無法載入 SAP NCo 組件
+System.IO.FileLoadException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'.
+   at System.Runtime.Loader.AssemblyLoadContext.LoadFromAssemblyPath(String assemblyPath)
+   at System.Reflection.Assembly.LoadFrom(String assemblyFile)
+   at FourPLWebAPI.Infrastructure.SapHelper.TryLoadSapNcoAssembly() in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 153
+2025-12-11 15:26:28.614 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+System.InvalidOperationException: SAP NCo 3.1 DLL 無法載入。請確認 sapnco.dll 和 sapnco_utils.dll 已正確放入 lib 資料夾，且為相容於 .NET 8 的版本 (NCo 3.1 for .NET, x64)。
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 118
+2025-12-11 15:26:28.616 +08:00 [ERR] SAP 查詢失敗: SAP NCo 3.1 DLL 無法載入。請確認 sapnco.dll 和 sapnco_utils.dll 已正確放入 lib 資料夾，且為相容於 .NET 8 的版本 (NCo 3.1 for .NET, x64)。
+2025-12-11 15:26:28.617 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: SAP NCo 3.1 DLL 無法載入。請確認 sapnco.dll 和 sapnco_utils.dll 已正確放入 lib 資料夾，且為相容於 .NET 8 的版本 (NCo 3.1 for .NET, x64)。
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 77
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:26:28.655 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 494.1303 ms
+2025-12-11 15:35:44.280 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:35:44.489 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:35:44.491 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:35:44.646 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 15:35:44.741 +08:00 [INF] Now listening on: http://localhost:5155
+2025-12-11 15:35:44.749 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 15:35:44.751 +08:00 [INF] Hosting environment: Development
+2025-12-11 15:35:44.752 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:35:49.288 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 15:35:49.319 +08:00 [INF] HTTP GET / responded 404 in 2.8820 ms
+2025-12-11 15:35:59.268 +08:00 [INF] HTTP GET /index.html responded 404 in 0.1406 ms
+2025-12-11 15:36:15.682 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:36:15.926 +08:00 [INF] 收到機櫃匯出請求 - RequestId: string, OrgCode: string
+2025-12-11 15:36:15.975 +08:00 [INF] 開始處理機櫃匯出請求: string
+2025-12-11 15:36:15.978 +08:00 [DBG] 步驟 1: 查詢 SAP 參數
+2025-12-11 15:36:16.032 +08:00 [DBG] 執行 SQL 查詢 (單一結果): 
+            SELECT 
+                Id, RfcName, SapSystemCode, CompanyCode, PlantCode,
+                AdditionalParams, OutputTableName, SftpDirectory,
+                XmlTemplateCode, IsActive
+            FROM SapParameters
+            WHERE OrganizationCode = @OrganizationCode
+              AND IsActive = 1
+            ORDER BY Id
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY
+2025-12-11 15:36:31.599 +08:00 [ERR] 機櫃匯出失敗: string
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.Connect(ServerInfo serverInfo, SqlInternalConnectionTds connHandler, TimeoutTimer timeout, SqlConnectionString connectionOptions, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 45
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 47
+   at FourPLWebAPI.Services.CabinetExportService.GetSapParametersAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 126
+   at FourPLWebAPI.Services.CabinetExportService.ExportAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 47
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-11 15:36:31.704 +08:00 [INF] HTTP POST /api/Integration/cabinet-export responded 400 in 16121.5933 ms
+2025-12-11 15:36:42.952 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:36:42.984 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:36:42.999 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS EQ 'S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE >= 'string'
+2025-12-11 15:36:43.009 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:36:43.132 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+System.ArgumentException: Object of type 'FourPLWebAPI.Infrastructure.DynamicDestinationConfig' cannot be converted to type 'SAP.Middleware.Connector.IDestinationConfiguration'.
+   at System.RuntimeType.CheckValue(Object& value, Binder binder, CultureInfo culture, BindingFlags invokeAttr)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+   at System.Reflection.MethodBase.Invoke(Object obj, Object[] parameters)
+   at FourPLWebAPI.Infrastructure.SapHelper.RegisterDestinationWithReflection(Assembly sapAssembly, Type destManagerType, Type configParamsType) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 319
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteWithReflection(Assembly sapAssembly, String rfcName, SapRfcInputBuilder builder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 184
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 124
+2025-12-11 15:36:43.151 +08:00 [ERR] SAP 查詢失敗: Object of type 'FourPLWebAPI.Infrastructure.DynamicDestinationConfig' cannot be converted to type 'SAP.Middleware.Connector.IDestinationConfiguration'.
+2025-12-11 15:36:43.157 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Object of type 'FourPLWebAPI.Infrastructure.DynamicDestinationConfig' cannot be converted to type 'SAP.Middleware.Connector.IDestinationConfiguration'.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 77
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:36:43.196 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 272.0914 ms
+2025-12-11 15:41:26.500 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:41:26.635 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:41:26.636 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:41:26.741 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:44:00.799 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:44:00.886 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:44:00.887 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:44:00.944 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:47:15.377 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:47:16.520 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:47:16.524 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:47:17.000 +08:00 [FTL] 應用程式啟動失敗
+System.Reflection.ReflectionTypeLoadException: Unable to load one or more of the requested types.
+Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+   at System.Reflection.RuntimeModule.GetTypes(RuntimeModule module)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider.PopulateFeature(IEnumerable`1 parts, ControllerFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationParts.ApplicationPartManager.PopulateFeature[TFeature](TFeature feature)
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetControllerTypes()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.GetDescriptors()
+   at Microsoft.AspNetCore.Mvc.ApplicationModels.ControllerActionDescriptorProvider.OnProvidersExecuting(ActionDescriptorProviderContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.UpdateCollection()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.Initialize()
+   at Microsoft.AspNetCore.Mvc.Infrastructure.DefaultActionDescriptorCollectionProvider.GetChangeToken()
+   at Microsoft.Extensions.Primitives.ChangeToken.ChangeTokenRegistration`1..ctor(Func`1 changeTokenProducer, Action`1 changeTokenConsumer, TState state)
+   at Microsoft.Extensions.Primitives.ChangeToken.OnChange(Func`1 changeTokenProducer, Action changeTokenConsumer)
+   at Microsoft.AspNetCore.Mvc.Routing.ActionEndpointDataSourceBase.Subscribe()
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.GetOrCreateDataSource(IEndpointRouteBuilder endpoints)
+   at Microsoft.AspNetCore.Builder.ControllerEndpointRouteBuilderExtensions.MapControllers(IEndpointRouteBuilder endpoints)
+   at FourPLWebAPI.Program.Main(String[] args) in C:\Lotus\FourPLWebAPI\src\Program.cs:line 180
+System.IO.FileNotFoundException: Could not load file or assembly 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'. 系統找不到指定的檔案。
+File name: 'sapnco, Version=3.1.0.42, Culture=neutral, PublicKeyToken=50436dca5c7f7d23'
+2025-12-11 15:52:57.117 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:52:57.297 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:52:57.299 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:52:57.435 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 15:52:57.507 +08:00 [INF] Now listening on: http://localhost:5155
+2025-12-11 15:52:57.513 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 15:52:57.515 +08:00 [INF] Hosting environment: Development
+2025-12-11 15:52:57.516 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:53:02.902 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 15:53:02.905 +08:00 [INF] HTTP GET / responded 404 in 0.3271 ms
+2025-12-11 15:53:12.641 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:53:12.773 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:53:12.784 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS EQ 'S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE >= 'string'
+2025-12-11 15:53:13.393 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:53:13.745 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 15:53:14.890 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+2025-12-11 15:53:14.899 +08:00 [ERR] SAP 查詢失敗: Data was lost while copying a value.
+2025-12-11 15:53:14.901 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Data was lost while copying a value.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 77
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:53:14.935 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 2351.1986 ms
+2025-12-11 15:53:43.879 +08:00 [INF] Application is shutting down...
+2025-12-11 15:53:51.207 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:53:52.680 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:53:52.685 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:53:53.086 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 15:53:53.420 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 15:53:53.432 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 15:53:53.435 +08:00 [INF] Hosting environment: Development
+2025-12-11 15:53:53.438 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:54:02.971 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 15:54:02.999 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:54:03.046 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:54:20.450 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS EQ 'S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE >= 'string'
+2025-12-11 15:54:22.215 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:54:22.408 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 15:54:23.435 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+2025-12-11 15:54:32.671 +08:00 [ERR] SAP 查詢失敗: Data was lost while copying a value.
+2025-12-11 15:54:34.310 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Data was lost while copying a value.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 77
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:54:34.365 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 31385.3297 ms
+2025-12-11 15:57:37.633 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 15:57:38.317 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 15:57:38.320 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 15:57:38.559 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 15:57:38.728 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 15:57:38.738 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 15:57:38.740 +08:00 [INF] Hosting environment: Development
+2025-12-11 15:57:38.743 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 15:57:42.141 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 15:57:42.170 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:57:42.274 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:57:45.797 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE>='string'
+2025-12-11 15:57:45.886 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:57:46.032 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 15:57:47.038 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+2025-12-11 15:57:47.046 +08:00 [ERR] SAP 查詢失敗: Data was lost while copying a value.
+2025-12-11 15:57:47.070 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Data was lost while copying a value.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 79
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:57:47.129 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 4977.9293 ms
+2025-12-11 15:57:51.462 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:57:51.469 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:57:51.472 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE>='string'
+2025-12-11 15:57:51.477 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:57:51.825 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+2025-12-11 15:57:51.829 +08:00 [ERR] SAP 查詢失敗: Data was lost while copying a value.
+2025-12-11 15:57:51.851 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Data was lost while copying a value.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 79
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:57:51.854 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 394.2369 ms
+2025-12-11 15:58:00.670 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 15:58:00.673 +08:00 [INF] 收到帳單查詢請求 - Vm: string
+2025-12-11 15:58:00.675 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'Z' , 'B' ) AND INVODATE>='string'
+2025-12-11 15:58:07.837 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 15:58:08.087 +08:00 [ERR] SAP RFC 執行失敗: RFC_READ_TABLE
+SAP.Middleware.Connector.RfcAbapRuntimeException: Data was lost while copying a value.
+   at SAP.Middleware.Connector.RfcConnection.ThrowRfcErrorMsg()
+   at SAP.Middleware.Connector.RfcConnection.ReadBytes(Byte* buffer, Int32 count)
+   at SAP.Middleware.Connector.RfcConnection.ReadRfcIDBegin(Int32& length)
+   at SAP.Middleware.Connector.RfcConnection.ReadUpTo(RFCGET readState, RfcFunction function, RFCID toRid)
+   at SAP.Middleware.Connector.RfcConnection.RfcReceive(RfcFunction function)
+   at SAP.Middleware.Connector.RfcFunction.RfcDeserialize(RfcConnection conn, IRfcIOStream stream)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn, RFCID rid)
+   at SAP.Middleware.Connector.RfcFunction.RfcCallReceive(RfcConnection conn)
+   at SAP.Middleware.Connector.RfcFunction.Invoke(RfcDestination destination)
+   at FourPLWebAPI.Infrastructure.SapHelper.ExecuteRfcInternal(String rfcName, Action`1 inputBuilder, Boolean commitOnSuccess) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SapHelper.cs:line 144
+2025-12-11 15:58:08.094 +08:00 [ERR] SAP 查詢失敗: Data was lost while copying a value.
+2025-12-11 15:58:08.117 +08:00 [ERR] 帳單查詢發生錯誤
+System.Exception: SAP 查詢失敗: Data was lost while copying a value.
+   at FourPLWebAPI.Services.BillingService.GetBillingDataAsync(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Services\BillingService.cs:line 79
+   at FourPLWebAPI.Controllers.IntegrationController.QueryBilling(BillingQueryRequest request) in C:\Lotus\FourPLWebAPI\src\Controllers\IntegrationController.cs:line 125
+2025-12-11 15:58:08.121 +08:00 [ERR] HTTP POST /api/Integration/billing-query responded 500 in 7453.3129 ms
+2025-12-11 16:00:08.697 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:00:09.722 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:00:09.727 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:00:10.242 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:00:10.518 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:00:10.532 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:00:10.535 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:00:10.538 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:00:19.885 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:00:19.918 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:00:19.979 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:00:19.984 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20241210'
+2025-12-11 16:00:52.555 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:00:52.720 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:00:57.825 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:01:56.475 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 96582.3239 ms
+2025-12-11 16:02:44.407 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:02:46.207 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:02:46.211 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:02:46.653 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:02:47.014 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:02:47.028 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:02:47.031 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:02:47.034 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:03:25.105 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:03:25.164 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:03:25.279 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:03:25.287 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20240101'
+2025-12-11 16:03:26.925 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:03:27.095 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:03:36.532 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:03:37.641 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 12526.0122 ms
+2025-12-11 16:04:09.447 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:04:10.618 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:04:10.707 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:04:11.278 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:04:11.547 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:04:11.559 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:04:11.562 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:04:11.565 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:06:18.810 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:06:18.867 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:06:18.967 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:06:18.974 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20240101'
+2025-12-11 16:06:19.074 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:06:19.281 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:06:29.315 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:07:58.145 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:07:58.837 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:07:58.844 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:07:59.096 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:07:59.290 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:07:59.299 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:07:59.302 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:07:59.304 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:08:11.999 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:08:12.030 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:08:12.126 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 400 in 118.4060 ms
+2025-12-11 16:08:13.835 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:08:13.843 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 400 in 8.4390 ms
+2025-12-11 16:08:19.915 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:08:19.925 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:08:19.927 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20251101'
+2025-12-11 16:08:19.959 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:08:20.027 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:08:20.521 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:08:23.362 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 3449.0198 ms
+2025-12-11 16:09:17.587 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:09:18.834 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:09:18.840 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:09:19.614 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:09:19.989 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:09:20.006 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:09:20.011 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:09:20.031 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:10:03.097 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:10:03.652 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:10:03.653 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:10:03.820 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:10:03.965 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:10:03.971 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:10:03.973 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:10:03.976 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:10:12.474 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:10:12.505 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:10:12.590 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 400 in 108.6248 ms
+2025-12-11 16:10:16.848 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:10:16.860 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:10:16.865 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20251101'
+2025-12-11 16:10:16.907 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:10:16.994 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:10:17.619 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:10:20.822 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 3975.7877 ms
+2025-12-11 16:12:09.327 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:12:10.623 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:12:10.630 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:12:11.225 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:12:11.504 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:12:11.520 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:12:11.526 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:12:11.530 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:12:24.878 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:12:24.919 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:12:25.008 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:12:25.019 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20251201'
+2025-12-11 16:12:25.073 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:12:25.184 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:12:25.661 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:12:29.158 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 4267.1597 ms
+2025-12-11 16:42:04.701 +08:00 [INF] 啟動 FourPL Web API
+2025-12-11 16:42:05.052 +08:00 [INF] SAP 連線模式 - 使用實際 SAP NCo
+2025-12-11 16:42:05.053 +08:00 [WRN] 未設定 Hangfire 連線字串，排程功能停用
+2025-12-11 16:42:05.195 +08:00 [INF] FourPL Web API 已啟動
+2025-12-11 16:42:05.305 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-11 16:42:05.310 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-11 16:42:05.312 +08:00 [INF] Hosting environment: Development
+2025-12-11 16:42:05.314 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-11 16:42:47.507 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-11 16:42:47.558 +08:00 [INF] SAP Helper 初始化 - 環境: PRD, Host: 172.29.40.106, SID: S4P
+2025-12-11 16:42:47.695 +08:00 [INF] 收到帳單查詢請求 - Vm: AR
+2025-12-11 16:42:47.709 +08:00 [INF] 查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND ORDLA IN ( 'A' , 'L' ) AND INVODATE>='20251201'
+2025-12-11 16:42:47.810 +08:00 [INF] 開始執行 SAP RFC: RFC_READ_TABLE
+2025-12-11 16:42:48.002 +08:00 [INF] SAP Destination Configuration 已註冊
+2025-12-11 16:42:48.686 +08:00 [INF] SAP RFC 執行成功: RFC_READ_TABLE
+2025-12-11 16:42:51.943 +08:00 [INF] HTTP POST /api/Integration/billing-query responded 200 in 4426.2269 ms
