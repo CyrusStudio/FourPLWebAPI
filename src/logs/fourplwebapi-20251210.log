@@ -1,0 +1,85 @@
+2025-12-10 11:43:40.361 +08:00 [INF] 啟動 FourPL Web API
+2025-12-10 11:43:45.758 +08:00 [WRN] SAP Mock 模式已啟用 - 使用模擬資料
+2025-12-10 11:43:46.820 +08:00 [INF] FourPL Web API 已啟動
+2025-12-10 11:43:47.435 +08:00 [INF] Now listening on: http://localhost:5000
+2025-12-10 11:43:47.438 +08:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-12-10 11:43:47.439 +08:00 [INF] Hosting environment: Development
+2025-12-10 11:43:47.439 +08:00 [INF] Content root path: C:\Lotus\FourPLWebAPI\src
+2025-12-10 11:44:01.459 +08:00 [WRN] Failed to determine the https port for redirect.
+2025-12-10 11:44:01.570 +08:00 [INF] HTTP GET /api/integration/health responded 200 in 107.7979 ms
+2025-12-10 11:45:38.093 +08:00 [INF] HTTP POST /api/integration/cabinet-export responded 400 in 38.9400 ms
+2025-12-10 11:50:45.440 +08:00 [INF] 收到機櫃匯出請求 - RequestId: TEST-001, OrgCode: ORG001
+2025-12-10 11:50:45.633 +08:00 [INF] 開始處理機櫃匯出請求: TEST-001
+2025-12-10 11:50:45.633 +08:00 [DBG] 步驟 1: 查詢 SAP 參數
+2025-12-10 11:50:46.549 +08:00 [DBG] 執行 SQL 查詢 (單一結果): 
+            SELECT 
+                Id, RfcName, SapSystemCode, CompanyCode, PlantCode,
+                AdditionalParams, OutputTableName, SftpDirectory,
+                XmlTemplateCode, IsActive
+            FROM SapParameters
+            WHERE OrganizationCode = @OrganizationCode
+              AND IsActive = 1
+            ORDER BY Id
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY
+2025-12-10 11:51:02.461 +08:00 [ERR] 機櫃匯出失敗: TEST-001
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.Connect(ServerInfo serverInfo, SqlInternalConnectionTds connHandler, TimeoutTimer timeout, SqlConnectionString connectionOptions, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 45
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 47
+   at FourPLWebAPI.Services.CabinetExportService.GetSapParametersAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 126
+   at FourPLWebAPI.Services.CabinetExportService.ExportAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 47
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-10 11:51:02.708 +08:00 [INF] HTTP POST /api/integration/cabinet-export responded 400 in 17286.2255 ms
+2025-12-10 11:52:59.300 +08:00 [INF] HTTP GET /api/Integration/health responded 200 in 1.0627 ms
+2025-12-10 11:53:14.089 +08:00 [INF] 收到機櫃匯出請求 - RequestId: string, OrgCode: string
+2025-12-10 11:53:14.089 +08:00 [INF] 開始處理機櫃匯出請求: string
+2025-12-10 11:53:14.090 +08:00 [DBG] 步驟 1: 查詢 SAP 參數
+2025-12-10 11:53:14.090 +08:00 [DBG] 執行 SQL 查詢 (單一結果): 
+            SELECT 
+                Id, RfcName, SapSystemCode, CompanyCode, PlantCode,
+                AdditionalParams, OutputTableName, SftpDirectory,
+                XmlTemplateCode, IsActive
+            FROM SapParameters
+            WHERE OrganizationCode = @OrganizationCode
+              AND IsActive = 1
+            ORDER BY Id
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY
+2025-12-10 11:53:29.098 +08:00 [ERR] 機櫃匯出失敗: string
+Microsoft.Data.SqlClient.SqlException (0x80131904): 建立連接至 SQL Server 時，發生網路相關或執行個體特定的錯誤。找不到或無法存取伺服器。確認執行個名稱是否正確，以及 SQL Server 是否設定為允許遠端連線。 (provider: 具名管道提供者, error: 40 - 無法開啟 SQL Server 連線)
+ ---> System.ComponentModel.Win32Exception (2): 系統找不到指定的檔案。
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.Connect(ServerInfo serverInfo, SqlInternalConnectionTds connHandler, TimeoutTimer timeout, SqlConnectionString connectionOptions, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 45
+   at FourPLWebAPI.Infrastructure.SqlHelper.QueryFirstOrDefaultAsync[T](String sql, Object param) in C:\Lotus\FourPLWebAPI\src\Infrastructure\SqlHelper.cs:line 47
+   at FourPLWebAPI.Services.CabinetExportService.GetSapParametersAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 126
+   at FourPLWebAPI.Services.CabinetExportService.ExportAsync(CabinetExportRequest request) in C:\Lotus\FourPLWebAPI\src\Services\CabinetExportService.cs:line 47
+ClientConnectionId:00000000-0000-0000-0000-000000000000
+Error Number:2,State:0,Class:20
+2025-12-10 11:53:29.102 +08:00 [INF] HTTP POST /api/Integration/cabinet-export responded 400 in 15015.3665 ms

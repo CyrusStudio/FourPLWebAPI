@@ -1,0 +1,150 @@
+{
+    "info": {
+        "name": "FourPL Web API",
+        "description": "SAP 整合中間件 API - 測試集合",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/integration/health",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "integration",
+                        "health"
+                    ]
+                },
+                "description": "健康檢查端點，確認 API 是否正常運作"
+            },
+            "response": []
+        },
+        {
+            "name": "Cabinet Export",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"requestId\": \"REQ-{{$timestamp}}\",\n  \"organizationCode\": \"ORG001\",\n  \"cabinetType\": \"RACK\",\n  \"dataCenterCode\": \"DC-TPE\",\n  \"startDate\": \"20240101\",\n  \"endDate\": \"20241231\",\n  \"includeInactive\": false\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/integration/cabinet-export",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "integration",
+                        "cabinet-export"
+                    ]
+                },
+                "description": "機櫃資料匯出 API\n\n流程：\n1. SQL 查詢參數\n2. SAP RFC 呼叫\n3. XML 轉換\n4. sFTP 上傳"
+            },
+            "response": []
+        },
+        {
+            "name": "Cabinet Export - Minimal",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"requestId\": \"REQ-MINIMAL-{{$timestamp}}\",\n  \"organizationCode\": \"ORG001\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/integration/cabinet-export",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "integration",
+                        "cabinet-export"
+                    ]
+                },
+                "description": "機櫃匯出 - 最小必要參數"
+            },
+            "response": []
+        },
+        {
+            "name": "Cabinet Export - With Custom Path",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"requestId\": \"REQ-CUSTOM-{{$timestamp}}\",\n  \"organizationCode\": \"ORG001\",\n  \"customUploadPath\": \"/custom/path/export.xml\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/integration/cabinet-export",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "integration",
+                        "cabinet-export"
+                    ]
+                },
+                "description": "機櫃匯出 - 自訂 sFTP 上傳路徑"
+            },
+            "response": []
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has success field\", function () {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('success');",
+                    "});"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "https://localhost:5001",
+            "type": "string"
+        }
+    ]
+}
