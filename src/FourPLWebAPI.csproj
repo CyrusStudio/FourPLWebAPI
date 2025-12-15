@@ -33,11 +33,19 @@
     </Reference>
   </ItemGroup>
 
+<<<<<<< HEAD
   <ItemGroup>
     <Content Include="lib\ijwhost.dll">
       <Link>%(Filename)%(Extension)</Link> 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+=======
+  <!-- 複製 SAP NCo 所有 DLL 到輸出目錄 -->
+  <ItemGroup>
+    <None Include="lib\*.dll" Condition="Exists('lib\sapnco.dll')">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+>>>>>>> 64d6fe872d70c846c2250b0fb95432dbdd71a493
   </ItemGroup>
 </Project>
