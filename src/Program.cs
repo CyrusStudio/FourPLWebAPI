@@ -90,6 +90,7 @@ public class Program
 
             // 註冊 Business Services
             builder.Services.AddScoped<IBillingService, BillingService>();
+            builder.Services.AddScoped<ISOService, SOService>();
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
