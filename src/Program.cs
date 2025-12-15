@@ -91,6 +91,16 @@ public class Program
             // 註冊 Business Services
             builder.Services.AddScoped<ISOService, SOService>();
 
+            // 註冊 DataExchange 服務 (NetworkDiskHelper 僅支援 Windows)
+#pragma warning disable CA1416 // 驗證平台相容性
+            builder.Services.AddScoped<INetworkDiskHelper, NetworkDiskHelper>();
+#pragma warning restore CA1416
+            builder.Services.AddScoped<IEmailHelper, EmailHelper>();
+            builder.Services.AddScoped<ISftpConnectionFactory, SftpConnectionFactory>();
+            builder.Services.AddScoped<IDataExchangeService, DataExchangeService>();
+            builder.Services.AddScoped<ISapMasterDataRepository, SapMasterDataRepository>();
+            builder.Services.AddScoped<ISapFileProcessor, SapFileProcessor>();
+
             // 註冊 Job 服務
             builder.Services.AddScoped<FourPLWebAPI.Jobs.JobExecutor>();
             builder.Services.AddScoped<FourPLWebAPI.Jobs.SOSyncJob>();

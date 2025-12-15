@@ -1,174 +1,174 @@
-# SO 資料同步服務重構
+# 檔案交換功能整合至 FourPLWebAPI
 
-將舊版 `GetSO` 程式碼重構至新架構，使用專案既有的 `ISapHelper` 和 `ISqlHelper` 基礎設施服務，取代直接的 SAP RFC 呼叫和 ADO.NET 操作。
+將現有 `sFTPDataExchange` Console 應用程式重構並整合至 FourPLWebAPI 專案，遵循 DI 模式、使用 Serilog 記錄、支援 Hangfire 排程執行。
 
-## User Review Required
+## 功能摘要
 
-> [!IMPORTANT]
-> **資料庫連線字串**：原程式碼使用硬編碼的連線字串 (`172.29.40.2` 的 SAPDS 資料庫)。請確認此連線是否應：
-> 1. 使用現有的 `DefaultConnection` 設定
-> 2. 新增專用的 `SAPDSConnection` 設定
+原程式執行以下四種檔案交換場景：
 
-> [!WARNING]
-> **破壞性變更**：此重構會移除舊的 `ApiResultDTO<IEnumerable<RefSelectionListMaster>>` 回傳格式，改用新的 `SOMasterData` DTO。如有外部系統依賴舊格式，請告知。
+1. **SAP → BPM**：從 SAP AP 資料夾複製 XML 檔案至 BPM，依檔名前綴分類存放
+2. **BPM → SAP**：從 BPM 上傳 XML 檔案至 SAP AP 資料夾，並備份
+3. **BPM → ZL**：透過 sFTP 上傳檔案至 ZL 伺服器
+4. **BPM → ARICH**：透過 sFTP 上傳檔案至 ARICH 伺服器
 
 ---
 
 ## Proposed Changes
 
-### Models 層
+### Infrastructure 基礎設施層
 
-#### [NEW] [SODTOs.cs](file:///c:/Lotus/FourPLWebAPI/src/Models/SODTOs.cs)
-建立 SO 相關資料模型：
-- `SOQueryRequest`：查詢請求參數 (Vm, StartDate)
-- `SOMasterData`：SO 主檔資料，對應資料庫欄位
-- `SOSyncResult`：同步結果摘要
+#### [NEW] [INetworkDiskHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/INetworkDiskHelper.cs)
+- 定義網路磁碟連線介面
+- 方法：`ConnectAsync()`、`DisconnectAsync()`
 
-```csharp
-public class SOQueryRequest
+#### [NEW] [NetworkDiskHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/NetworkDiskHelper.cs)
+- 實作 P/Invoke 呼叫 `mpr.dll` 的 `WNetAddConnection2` / `WNetCancelConnection2`
+- 從設定檔讀取網路磁碟路徑與認證資訊
+- 支援多組網路磁碟對應
+
+#### [NEW] [IEmailHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/IEmailHelper.cs)
+- 定義郵件通知介面
+- 方法：`SendNotificationAsync(subject, body)`
+
+#### [NEW] [EmailHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/EmailHelper.cs)
+- 使用 `SmtpClient` 發送郵件
+- 從設定檔讀取 SMTP 伺服器設定
+
+---
+
+### Services 服務層
+
+#### [NEW] [IDataExchangeService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/IDataExchangeService.cs)
+- 定義檔案交換服務介面
+- 方法：
+  - `ExecuteAllAsync()` - 執行所有交換流程
+  - `GetFilesFromSapAsync()` - 場景 1
+  - `UploadFilesToSapAsync()` - 場景 2
+  - `UploadFilesToZLAsync()` - 場景 3
+  - `UploadFilesToARICHAsync()` - 場景 4
+
+#### [NEW] [DataExchangeService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/DataExchangeService.cs)
+- 實作 `IDataExchangeService`
+- 注入 `ISftpHelper`、`INetworkDiskHelper`、`IEmailHelper`
+- 使用 async/await 模式
+- 使用 Serilog 記錄操作日誌
+- 統一錯誤處理與通知
+
+---
+
+### Configuration 設定
+
+#### [MODIFY] [appsettings.Development.json](file:///c:/Lotus/FourPLWebAPI/src/appsettings.Development.json)
+新增以下設定區段：
+
+```json
 {
-    public string Vm { get; set; } = string.Empty;  // "AR" 或其他
-    public string? StartDate { get; set; }           // YYYYMMDD 格式
-}
-
-public class SOMasterData
-{
-    public string SONumber { get; set; }
-    public string SOItem { get; set; }
-    public string MaterialCode { get; set; }
-    public string MaterialDesc { get; set; }
-    public string SalesUnit { get; set; }
-    public string SalesDate { get; set; }
-    public string Invoice { get; set; }
-    public string InvoiceDate { get; set; }
-    public decimal Qty { get; set; }
-    public string Batch { get; set; }
-    public string ValidityPeriod { get; set; }
-    public decimal FixedPrice { get; set; }
-    public string CreditMemo { get; set; }
-    public string CustomerCode { get; set; }
-    public string BPMOriginNumber { get; set; }
-    public string SPNumber { get; set; }
-}
-
-public class SOSyncResult
-{
-    public int InsertedCount { get; set; }
-    public int DeletedCount { get; set; }
-    public string TargetTable { get; set; }
-    public List<SOMasterData> Data { get; set; }
+  "DataExchange": {
+    "NetworkDisks": [
+      {
+        "RemotePath": "\\\\server\\share",
+        "LocalDrive": "X:",
+        "Username": "domain\\user",
+        "Password": "****"
+      }
+    ],
+    "SapToLocal": {
+      "SourcePath": "X:\\SAP\\Outbound",
+      "TargetBasePath": "D:\\BPM\\Import\\",
+      "FileMapping": {
+        "CSTM": "Customer",
+        "MARA": "Material",
+        "SALES": "Sales",
+        "PRICE": "Price"
+      }
+    },
+    "LocalToSap": {
+      "SourcePath": "D:\\BPM\\Export\\SAP",
+      "TargetPath": "X:\\SAP\\Inbound",
+      "BackupPath": "D:\\BPM\\Backup\\SAP"
+    },
+    "SftpTargets": {
+      "ZL": {
+        "Host": "sftp.zl.example.com",
+        "Port": 22,
+        "Username": "zl_user",
+        "Password": "****",
+        "SourcePath": "D:\\BPM\\Export\\ZL",
+        "TargetPath": "/upload",
+        "BackupPath": "D:\\BPM\\Backup\\ZL"
+      },
+      "ARICH": {
+        "Host": "sftp.arich.example.com",
+        "Port": 22,
+        "Username": "arich_user",
+        "Password": "****",
+        "SourcePath": "D:\\BPM\\Export\\ARICH",
+        "TargetPath": "/upload",
+        "BackupPath": "D:\\BPM\\Backup\\ARICH"
+      }
+    }
+  },
+  "Smtp": {
+    "Host": "smtp.example.com",
+    "Port": 587,
+    "EnableSsl": true,
+    "Username": "sender@example.com",
+    "Password": "****",
+    "FromAddress": "sender@example.com",
+    "NotifyRecipients": ["admin@example.com"]
+  }
 }
 ```
 
 ---
 
-### Infrastructure 層
+### Jobs 排程
 
-#### [MODIFY] [ISqlHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/ISqlHelper.cs)
-新增 Bulk Insert 介面方法：
-```csharp
-/// <summary>
-/// 執行 Bulk Insert 操作
-/// </summary>
-Task<int> BulkInsertAsync<T>(string tableName, IEnumerable<T> data);
-```
-
-#### [MODIFY] [SqlHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/SqlHelper.cs)
-實作 Bulk Insert（使用 Dapper.Contrib 或手動 DataTable）：
-```csharp
-public async Task<int> BulkInsertAsync<T>(string tableName, IEnumerable<T> data)
-{
-    // 使用 SqlBulkCopy 實作
-}
-```
-
----
-
-### Services 層
-
-#### [NEW] [SOService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/SOService.cs)
-建立 SO 同步服務：
-
-```csharp
-public interface ISOService
-{
-    /// <summary>
-    /// 從 SAP 查詢 SO 資料並同步至 SQL Server
-    /// </summary>
-    Task<SOSyncResult> SyncSOMasterAsync(SOQueryRequest request);
-}
-
-public class SOService : ISOService
-{
-    // 1. 呼叫 ISapHelper.ExecuteRfcAsync 查詢 ZT4PL_BILLING
-    // 2. 轉換資料格式 (處理 BOT->BT, FixedPrice 計算等)
-    // 3. 呼叫 ISqlHelper.ExecuteAsync 刪除舊資料
-    // 4. 呼叫 ISqlHelper.BulkInsertAsync 寫入新資料
-    // 5. 呼叫 ISqlHelper.ExecuteAsync 更新 MaterialDesc
-}
-```
-
-**主要邏輯對應**：
-| 原程式碼 | 新架構 |
-|---------|-------|
-| `_sapRfcService.Execute<SAPInput2, SAPOutput2>` | `_sapHelper.ExecuteRfcAsync("RFC_READ_TABLE", ...)` |
-| `new SqlConnection(...)` + `SqlBulkCopy` | `_sqlHelper.BulkInsertAsync(...)` |
-| 硬編碼 `ORDLA IN (...)` 條件 | 依 `Vm` 參數動態決定 |
-| `DataTable` 轉換 | 直接映射至 `SOMasterData` |
-
----
-
-### Controllers 層
-
-#### [MODIFY] [IntegrationController.cs](file:///c:/Lotus/FourPLWebAPI/src/Controllers/IntegrationController.cs)
-新增 SO 同步端點：
-
-```csharp
-[HttpPost("so-sync")]
-public async Task<ActionResult<SOSyncResult>> SyncSOMaster([FromBody] SOQueryRequest request)
-{
-    var result = await _soService.SyncSOMasterAsync(request);
-    return Ok(result);
-}
-```
-
----
-
-### DI 註冊
+#### [NEW] [DataExchangeJob.cs](file:///c:/Lotus/FourPLWebAPI/src/jobs/DataExchangeJob.cs)
+- Hangfire 排程任務
+- 注入 `IDataExchangeService`
+- 執行 `ExecuteAllAsync()`
 
 #### [MODIFY] [Program.cs](file:///c:/Lotus/FourPLWebAPI/src/Program.cs)
-註冊新服務：
-```csharp
-builder.Services.AddScoped<ISOService, SOService>();
-```
+- 註冊新服務：`INetworkDiskHelper`、`IEmailHelper`、`IDataExchangeService`
+- 註冊 `DataExchangeJob`
+
+---
+
+## 優化重點
+
+| 原程式問題 | 優化方案 |
+|------------|----------|
+| 靜態方法，無法測試 | 使用介面與 DI |
+| 同步 I/O 阻塞 | 使用 async/await |
+| `Console.WriteLine` 輸出 | 使用 Serilog 結構化日誌 |
+| 硬編碼設定在 `App.config` | 使用 `appsettings.json` |
+| 例外處理不一致 | 統一錯誤處理與通知 |
+| 重複程式碼 | 抽取共用方法 |
 
 ---
 
 ## Verification Plan
 
-### Automated Tests
-目前專案無單元測試框架，跳過自動化測試。
+### 自動化驗證
 
-### Manual Verification
-
-1. **編譯驗證**
-   ```bash
+1. **建置專案**
+   ```powershell
    cd c:\Lotus\FourPLWebAPI\src
    dotnet build
    ```
+   期望結果：Build succeeded，無錯誤
 
-2. **API 測試** (使用 Swagger 或 Postman)
-   - 啟動應用程式：`dotnet run`
-   - 開啟 Swagger：`https://localhost:5001/swagger`
-   - 呼叫 `POST /api/integration/so-sync`：
-     ```json
-     {
-       "vm": "AR",
-       "startDate": "20251201"
-     }
-     ```
-   - 確認回傳包含 `insertedCount`, `deletedCount`, `data` 等欄位
+### 手動驗證
 
-3. **資料庫驗證** (需使用者確認)
-   - 檢查 `Sales_ZLSOMaster` / `Sales_ArichSOMaster` 資料表是否正確更新
-   - 確認 `MaterialDesc` 欄位有透過 JOIN 更新
+1. **確認服務註冊**
+   - 執行 `dotnet run`，檢查無 DI 解析錯誤
+
+2. **測試 API 端點**（若新增 Controller）
+   - 透過 Swagger 呼叫測試端點
+
+3. **Hangfire Dashboard**
+   - 確認 DataExchangeJob 出現在排程清單中
+
+> [!NOTE]
+> 由於原程式依賴實際網路磁碟、SFTP 伺服器、SMTP 伺服器，完整的端到端測試需要使用者提供實際環境設定或 Mock 伺服器。

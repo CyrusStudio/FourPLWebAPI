@@ -1,0 +1,388 @@
+using FourPLWebAPI.Infrastructure;
+
+namespace FourPLWebAPI.Services;
+
+/// <summary>
+/// SAP 檔案服務實作
+/// 處理從 SAP 下載檔案和後續處理 (Customer, Material, Price, Sales)
+/// </summary>
+public class SapFileProcessor : ISapFileProcessor
+{
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<SapFileProcessor> _logger;
+    private readonly INetworkDiskHelper _networkDiskHelper;
+    private readonly ISapMasterDataRepository _masterDataRepository;
+    private readonly IConfigurationSection _processingSection;
+    private readonly IConfigurationSection _downloadSection;
+
+    // 支援的檔案類型
+    private static readonly string[] SupportedFileTypes = { "Customer", "Material", "Price", "Sales" };
+
+    /// <summary>
+    /// 建構函式
+    /// </summary>
+    public SapFileProcessor(
+        IConfiguration configuration,
+        ILogger<SapFileProcessor> logger,
+        INetworkDiskHelper networkDiskHelper,
+        ISapMasterDataRepository masterDataRepository)
+    {
+        _configuration = configuration;
+        _logger = logger;
+        _networkDiskHelper = networkDiskHelper;
+        _masterDataRepository = masterDataRepository;
+        _processingSection = configuration.GetSection("DataExchange:SapFileProcessing:FileTypes");
+        _downloadSection = configuration.GetSection("DataExchange:SapToLocal");
+    }
+
+    #region SAP 檔案下載
+
+    /// <inheritdoc />
+    public async Task<SapDownloadResult> DownloadFromSapAsync()
+    {
+        var result = new SapDownloadResult
+        {
+            StartTime = DateTime.Now
+        };
+
+        try
+        {
+            _logger.LogInformation("=== 開始執行: SAP → BPM (下載) ===");
+
+            // 連接網路磁碟
+            await _networkDiskHelper.ConnectAllAsync();
+
+            var sourcePath = _downloadSection["SourcePath"] ?? "";
+            var targetBasePath = _downloadSection["TargetPath"] ?? "";
+
+            if (!Directory.Exists(sourcePath))
+            {
+                throw new DirectoryNotFoundException($"來源目錄不存在: {sourcePath}");
+            }
+
+            var files = Directory.GetFiles(sourcePath);
+            _logger.LogInformation("找到 {Count} 個檔案待處理", files.Length);
+
+            var timestamp = DateTime.Now.ToString("_yyyyMMddHHmmss");
+
+            foreach (var filePath in files)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+                var extension = Path.GetExtension(filePath);
+                var prefix = fileName.Split('_')[0];
+
+                // 根據檔名前綴決定目標資料夾
+                var targetFolder = GetTargetFolder(prefix);
+                if (string.IsNullOrEmpty(targetFolder))
+                {
+                    _logger.LogWarning("無法識別檔案前綴: {FileName}", fileName);
+                    continue;
+                }
+
+                var targetDir = Path.Combine(targetBasePath, targetFolder);
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                var targetPath = Path.Combine(targetDir, $"{fileName}{timestamp}{extension}");
+
+                // 複製檔案
+                File.Copy(filePath, targetPath, true);
+                _logger.LogInformation("複製: {Source} -> {Target}", Path.GetFileName(filePath), targetPath);
+
+                // 刪除原始檔案
+                File.Delete(filePath);
+                _logger.LogDebug("已刪除原始檔案: {FilePath}", filePath);
+
+                result.ProcessedFiles.Add(new SapDownloadFileInfo
+                {
+                    FileName = Path.GetFileName(filePath),
+                    FileType = targetFolder,
+                    DestinationPath = targetPath
+                });
+                result.ProcessedCount++;
+            }
+
+            result.Success = true;
+            _logger.LogInformation("=== 完成: SAP → BPM (下載), 處理 {Count} 個檔案 ===", result.ProcessedCount);
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "執行失敗: SAP → BPM (下載)");
+        }
+
+        result.EndTime = DateTime.Now;
+        return result;
+    }
+
+    /// <summary>
+    /// 根據檔案前綴取得目標資料夾名稱
+    /// </summary>
+    private static string GetTargetFolder(string prefix)
+    {
+        return prefix.ToUpper() switch
+        {
+            "CSTM" => "Customer",
+            "MARA" => "Material",
+            "SALES" => "Sales",
+            "PRICE" => "Price",
+            _ => ""
+        };
+    }
+
+    #endregion
+
+    #region SAP 檔案後處理
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<FileProcessingResult>> ProcessAllAsync()
+    {
+        var results = new List<FileProcessingResult>();
+
+        _logger.LogInformation("========== 開始處理所有 SAP 檔案 ==========");
+
+        foreach (var fileType in SupportedFileTypes)
+        {
+            var result = await ProcessByTypeAsync(fileType);
+            results.Add(result);
+        }
+
+        _logger.LogInformation("========== 所有 SAP 檔案處理完畢 ==========");
+
+        return results;
+    }
+
+    /// <inheritdoc />
+    public async Task<FileProcessingResult> ProcessByTypeAsync(string fileType)
+    {
+        var result = new FileProcessingResult
+        {
+            FileType = fileType,
+            StartTime = DateTime.Now
+        };
+
+        try
+        {
+            _logger.LogInformation("=== 開始處理 {FileType} 類型檔案 ===", fileType);
+
+            var section = _processingSection.GetSection(fileType);
+            var sourcePath = section["SourcePath"] ?? "";
+            var successPath = section["SuccessPath"] ?? "";
+            var failPath = section["FailPath"] ?? "";
+
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                _logger.LogWarning("未設定 {FileType} 的來源路徑", fileType);
+                result.EndTime = DateTime.Now;
+                return result;
+            }
+
+            // 確保成功/失敗資料夾存在
+            EnsureDirectoryExists(successPath);
+            EnsureDirectoryExists(failPath);
+
+            // 取得待處理檔案
+            if (!Directory.Exists(sourcePath))
+            {
+                _logger.LogWarning("來源目錄不存在: {SourcePath}", sourcePath);
+                result.EndTime = DateTime.Now;
+                return result;
+            }
+
+            var files = Directory.GetFiles(sourcePath);
+            result.TotalCount = files.Length;
+
+            _logger.LogInformation("找到 {Count} 個 {FileType} 檔案待處理", files.Length, fileType);
+
+            foreach (var filePath in files)
+            {
+                var fileResult = await ProcessFileAsync(fileType, filePath);
+                result.FileResults.Add(fileResult);
+
+                if (fileResult.Success)
+                    result.SuccessCount++;
+                else
+                    result.FailCount++;
+            }
+
+            _logger.LogInformation("=== {FileType} 處理完成: 成功 {Success}/{Total}, 失敗 {Fail}/{Total} ===",
+                fileType, result.SuccessCount, result.TotalCount, result.FailCount, result.TotalCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "處理 {FileType} 類型檔案時發生錯誤", fileType);
+        }
+
+        result.EndTime = DateTime.Now;
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<SingleFileResult> ProcessFileAsync(string fileType, string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        var result = new SingleFileResult { FileName = fileName };
+
+        try
+        {
+            var section = _processingSection.GetSection(fileType);
+            var successPath = section["SuccessPath"] ?? "";
+            var failPath = section["FailPath"] ?? "";
+
+            _logger.LogDebug("開始處理檔案: {FileName}", fileName);
+
+            // 執行實際的檔案處理邏輯
+            var processSuccess = await ExecuteFileProcessingAsync(fileType, filePath);
+
+            if (processSuccess)
+            {
+                // 處理成功，移動到成功資料夾
+                var destPath = Path.Combine(successPath, fileName);
+                await MoveFileAsync(filePath, destPath);
+
+                result.Success = true;
+                result.DestinationPath = destPath;
+                _logger.LogInformation("檔案處理成功: {FileName} -> {DestPath}", fileName, successPath);
+            }
+            else
+            {
+                // 處理失敗，移動到失敗資料夾
+                var destPath = Path.Combine(failPath, fileName);
+                await MoveFileAsync(filePath, destPath);
+
+                result.Success = false;
+                result.ErrorMessage = "檔案處理失敗";
+                result.DestinationPath = destPath;
+                _logger.LogWarning("檔案處理失敗: {FileName} -> {DestPath}", fileName, failPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "處理檔案時發生例外: {FileName}", fileName);
+
+            // 嘗試移動到失敗資料夾
+            try
+            {
+                var section = _processingSection.GetSection(fileType);
+                var failPath = section["FailPath"] ?? "";
+                if (!string.IsNullOrEmpty(failPath))
+                {
+                    var destPath = Path.Combine(failPath, fileName);
+                    await MoveFileAsync(filePath, destPath);
+                    result.DestinationPath = destPath;
+                }
+            }
+            catch
+            {
+                // 移動失敗時忽略
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 執行實際的檔案處理邏輯
+    /// 根據檔案類型調用對應的泛型處理方法
+    /// </summary>
+    protected virtual async Task<bool> ExecuteFileProcessingAsync(string fileType, string filePath)
+    {
+        return fileType switch
+        {
+            "Customer" => await ProcessFileAsync<Models.CustomerMaster>(filePath, "Customer"),
+            "Material" => await ProcessFileAsync<Models.MaterialMaster>(filePath, "Material"),
+            "Price" => await ProcessFileAsync<Models.PriceMaster>(filePath, "Price"),
+            "Sales" => await ProcessFileAsync<Models.SalesMaster>(filePath, "Sales"),
+            _ => LogUnsupportedTypeAndReturnFalse(fileType)
+        };
+    }
+
+    /// <summary>
+    /// 記錄不支援的類型並回傳 false
+    /// </summary>
+    private bool LogUnsupportedTypeAndReturnFalse(string fileType)
+    {
+        _logger.LogWarning("不支援的檔案類型: {FileType}", fileType);
+        return false;
+    }
+
+    #endregion
+
+    #region 泛型檔案處理方法
+
+    /// <summary>
+    /// 泛型檔案處理方法
+    /// 讀取 XML 後寫入對應的資料庫資料表
+    /// </summary>
+    /// <typeparam name="T">Model 類型 (需標註 SapMasterDataAttribute)</typeparam>
+    /// <param name="filePath">XML 檔案路徑</param>
+    /// <param name="typeName">類型名稱 (用於記錄)</param>
+    /// <returns>處理是否成功</returns>
+    protected virtual async Task<bool> ProcessFileAsync<T>(string filePath, string typeName) where T : class, new()
+    {
+        try
+        {
+            _logger.LogInformation("開始處理 {TypeName} 檔案: {FilePath}", typeName, filePath);
+
+            // 讀取 XML 檔案
+            var data = await _masterDataRepository.ReadFromXmlAsync<T>(filePath);
+            var dataList = data.ToList();
+
+            if (!dataList.Any())
+            {
+                _logger.LogWarning("{TypeName} 檔案無有效資料: {FilePath}", typeName, filePath);
+                return true; // 空檔案視為成功
+            }
+
+            // 寫入資料庫
+            var count = await _masterDataRepository.UpsertBatchAsync(dataList);
+            _logger.LogInformation("{TypeName} 檔案處理完成: {FilePath}, 共 {Count} 筆", typeName, filePath, count);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{TypeName} 檔案處理失敗: {FilePath}", typeName, filePath);
+            return false;
+        }
+    }
+
+    #endregion
+
+    #region 輔助方法
+
+    /// <summary>
+    /// 確保目錄存在
+    /// </summary>
+    private void EnsureDirectoryExists(string path)
+    {
+        if (!string.IsNullOrEmpty(path) && !Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+            _logger.LogDebug("建立目錄: {Path}", path);
+        }
+    }
+
+    /// <summary>
+    /// 移動檔案 (非同步)
+    /// </summary>
+    private Task MoveFileAsync(string source, string destination)
+    {
+        return Task.Run(() =>
+        {
+            // 如果目標檔案已存在，先刪除
+            if (File.Exists(destination))
+            {
+                File.Delete(destination);
+            }
+            File.Move(source, destination);
+        });
+    }
+
+    #endregion
+}

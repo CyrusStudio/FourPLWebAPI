@@ -1,61 +1,55 @@
-# SO 資料同步服務重構 - 完成報告
+# 檔案交換功能整合完成報告
 
-## 變更摘要
+## 完成項目
 
-成功將舊版 `GetSO` 程式碼重構至新架構，並依使用者需求改為**自動雙表處理模式**，一次呼叫即可同步兩個資料表。
+將 `sFTPDataExchange` Console 應用程式功能重構並整合至 FourPLWebAPI 專案。
 
-## 變更檔案
+### 新增檔案
 
-| 檔案 | 變更類型 | 說明 |
-|------|----------|------|
-| [appsettings.json](file:///c:/Lotus/FourPLWebAPI/src/appsettings.json) | 修改 | 新增 `SAPDSConnection` 連線字串 |
-| [SODTOs.cs](file:///c:/Lotus/FourPLWebAPI/src/Models/SODTOs.cs) | 新增 | SO 相關 DTO 模型 (`SOSyncRequest`, `SOMasterData`, `SOSyncResult`, `SOSyncAllResult`) |
-| [ISqlHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/ISqlHelper.cs) | 修改 | 新增 `BulkInsertAsync` 和 `ExecuteWithConnectionAsync` |
-| [SqlHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/SqlHelper.cs) | 修改 | 實作 Bulk Insert 功能 |
-| [SOService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/SOService.cs) | 新增 | SO 主檔同步服務 (**自動處理雙表**) |
-| [IntegrationController.cs](file:///c:/Lotus/FourPLWebAPI/src/Controllers/IntegrationController.cs) | 修改 | 新增 `so-sync` 端點 |
-| [Program.cs](file:///c:/Lotus/FourPLWebAPI/src/Program.cs) | 修改 | 註冊 `ISOService` |
+| 檔案 | 說明 |
+|------|------|
+| [INetworkDiskHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/INetworkDiskHelper.cs) | 網路磁碟連線介面 |
+| [NetworkDiskHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/NetworkDiskHelper.cs) | P/Invoke 實作網路磁碟對應 |
+| [IEmailHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/IEmailHelper.cs) | 郵件通知介面 |
+| [EmailHelper.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/EmailHelper.cs) | SMTP 郵件發送實作 |
+| [ISftpConnectionFactory.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/ISftpConnectionFactory.cs) | 多伺服器 SFTP 連線介面 |
+| [SftpConnectionFactory.cs](file:///c:/Lotus/FourPLWebAPI/src/Infrastructure/SftpConnectionFactory.cs) | SFTP 連線工廠實作 |
+| [IDataExchangeService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/IDataExchangeService.cs) | 檔案交換服務介面 |
+| [DataExchangeService.cs](file:///c:/Lotus/FourPLWebAPI/src/Services/DataExchangeService.cs) | 四種場景實作 |
+| [DataExchangeController.cs](file:///c:/Lotus/FourPLWebAPI/src/Controllers/DataExchangeController.cs) | 手動觸發 API 端點 |
 
-## API 使用方式
+### 修改檔案
 
-```http
-POST /api/integration/so-sync
-Content-Type: application/json
+| 檔案 | 變更內容 |
+|------|----------|
+| [appsettings.json](file:///c:/Lotus/FourPLWebAPI/src/appsettings.json) | 新增 DataExchange、Smtp 設定區段 |
+| [Program.cs](file:///c:/Lotus/FourPLWebAPI/src/Program.cs) | 註冊 DataExchange 相關服務 |
 
-{
-    "startDate": "20251201"  // 可選，預設為昨天
-}
-```
+---
 
-**一次呼叫自動同步兩個表**：
-- `Sales_ArichSOMaster` (ORDLA IN ('A', 'L'))
-- `Sales_ZLSOMaster` (ORDLA IN ('Z', 'B'))
+## API 端點
 
-**回傳範例**：
-```json
-{
-    "success": true,
-    "message": "同步完成，共刪除 15 筆，新增 50 筆",
-    "totalDeletedCount": 15,
-    "totalInsertedCount": 50,
-    "results": [
-        {
-            "success": true,
-            "targetTable": "Sales_ArichSOMaster",
-            "deletedCount": 10,
-            "insertedCount": 25
-        },
-        {
-            "success": true,
-            "targetTable": "Sales_ZLSOMaster",
-            "deletedCount": 5,
-            "insertedCount": 25
-        }
-    ]
-}
-```
+| Method | Endpoint | 說明 |
+|--------|----------|------|
+| POST | `/api/DataExchange/execute-all` | 執行所有場景 |
+| POST | `/api/DataExchange/download/sap` | SAP → BPM 下載 |
+| POST | `/api/DataExchange/upload/sap` | BPM → SAP 上傳 |
+| POST | `/api/DataExchange/upload/zl` | BPM → ZL (sFTP) |
+| POST | `/api/DataExchange/upload/arich` | BPM → ARICH (sFTP) |
+
+---
 
 ## 驗證結果
 
-- ✅ 編譯成功 (0 錯誤, 1 警告)
-- ⏳ API 測試待使用者驗證
+```
+建置成功。
+    0 個警告
+    0 個錯誤
+```
+
+---
+
+## 待後續整合
+
+- [ ] `DataExchangeJob` Hangfire 排程任務
+- [ ] 單元測試
