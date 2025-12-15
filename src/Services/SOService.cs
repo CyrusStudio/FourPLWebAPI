@@ -29,6 +29,34 @@ public class SOService : ISOService
     // SAPDS 資料庫連線字串名稱
     private const string SAPDSConnectionName = "SAPDSConnection";
 
+    // SAP 查詢欄位 (提取為常數，避免重複建立)
+    private static readonly string[] SapQueryFields =
+    {
+        "ARSHPNO", "ARSSHPIM", "MATNR", "VRKME", "FKDAT",
+        "INVONO", "INVODATE", "KWMENG", "CHARG", "KBETR_ZTW2",
+        "ARBLPNO", "KUNNR", "VFDAT", "FORMNO", "KUNNR_SH"
+    };
+
+    // SAP 欄位索引常數 (增強可讀性)
+    private static class FieldIndex
+    {
+        public const int Arshpno = 0;      // SONumber
+        public const int Arsshpim = 1;     // SOItem
+        public const int Matnr = 2;        // MaterialCode
+        public const int Vrkme = 3;        // SalesUnit
+        public const int Fkdat = 4;        // SalesDate
+        public const int Invono = 5;       // Invoice
+        public const int Invodate = 6;     // InvoiceDate
+        public const int Kwmeng = 7;       // Qty
+        public const int Charg = 8;        // Batch
+        public const int KbetrZtw2 = 9;    // FixedPrice (原始值)
+        public const int Arblpno = 10;     // CreditMemo
+        public const int Kunnr = 11;       // CustomerCode
+        public const int Vfdat = 12;       // ValidityPeriod
+        public const int Formno = 13;      // BPMOriginNumber
+        public const int KunnrSh = 14;     // SPNumber
+    }
+
     // 定義同步配置
     private static readonly (string Query, string TargetTable, string Name)[] SyncConfigs =
     {
@@ -48,26 +76,17 @@ public class SOService : ISOService
     {
         var allResult = new SOSyncAllResult();
 
-        // 日期範圍 (若未提供則預設昨天)
-        var bDate = string.IsNullOrWhiteSpace(startDate)
-            ? DateTime.Now.AddDays(-1).ToString("yyyyMMdd")
-            : startDate;
-
-        // 確保日期格式正確 (只取數字)
-        bDate = new string(bDate.Where(char.IsDigit).ToArray());
-        if (bDate.Length != 8)
-        {
-            bDate = DateTime.Now.AddDays(-1).ToString("yyyyMMdd");
-        }
+        // 格式化日期 (若未提供則預設昨天)
+        var bDate = FormatDate(startDate);
 
         _logger.LogInformation("開始同步所有 SO 資料 - StartDate: {StartDate}", bDate);
 
-        // 依序處理每個配置
-        foreach (var (query, targetTable, name) in SyncConfigs)
-        {
-            var result = await SyncSingleTableAsync(query, targetTable, name, bDate);
-            allResult.Results.Add(result);
-        }
+        // 並行處理所有同步配置
+        var syncTasks = SyncConfigs.Select(config =>
+            SyncSingleTableAsync(config.Query, config.TargetTable, config.Name, bDate));
+
+        var results = await Task.WhenAll(syncTasks);
+        allResult.Results.AddRange(results);
 
         // 同步完成後更新 MaterialDesc
         try
@@ -93,6 +112,20 @@ public class SOService : ISOService
     }
 
     /// <summary>
+    /// 格式化日期字串
+    /// </summary>
+    private static string FormatDate(string? startDate)
+    {
+        if (string.IsNullOrWhiteSpace(startDate))
+        {
+            return DateTime.Now.AddDays(-1).ToString("yyyyMMdd");
+        }
+
+        var digits = new string(startDate.Where(char.IsDigit).ToArray());
+        return digits.Length == 8 ? digits : DateTime.Now.AddDays(-1).ToString("yyyyMMdd");
+    }
+
+    /// <summary>
     /// 同步單一資料表
     /// </summary>
     private async Task<SOSyncResult> SyncSingleTableAsync(string query, string targetTable, string name, string bDate)
@@ -103,14 +136,6 @@ public class SOService : ISOService
         {
             _logger.LogInformation("開始同步 {Name} 資料 - TargetTable: {Table}", name, targetTable);
 
-            // 定義需要的欄位
-            var fields = new[]
-            {
-                "ARSHPNO", "ARSSHPIM", "MATNR", "VRKME", "FKDAT",
-                "INVONO", "INVODATE", "KWMENG", "CHARG", "KBETR_ZTW2",
-                "ARBLPNO", "KUNNR", "VFDAT", "FORMNO", "KUNNR_SH"
-            };
-
             // 呼叫 RFC_READ_TABLE
             _logger.LogInformation("查詢 ZT4PL_BILLING, 條件: UPDSTS='S' AND {Query} AND INVODATE>='{Date}'", query, bDate);
 
@@ -120,21 +145,16 @@ public class SOService : ISOService
                 builder.SetImport("DELIMITER", ";");
 
                 // OPTIONS Table
-                var optionsList = new List<Dictionary<string, object>>
+                builder.AddTable("OPTIONS", new List<Dictionary<string, object>>
                 {
                     new() { { "TEXT", "UPDSTS EQ 'S'" } },
                     new() { { "TEXT", " AND " + query } },
                     new() { { "TEXT", $" AND INVODATE GE '{bDate}'" } }
-                };
-                builder.AddTable("OPTIONS", optionsList);
+                });
 
                 // FIELDS Table
-                var fieldList = new List<Dictionary<string, object>>();
-                foreach (var f in fields)
-                {
-                    fieldList.Add(new Dictionary<string, object> { { "FIELDNAME", f } });
-                }
-                builder.AddTable("FIELDS", fieldList);
+                builder.AddTable("FIELDS",
+                    SapQueryFields.Select(f => new Dictionary<string, object> { { "FIELDNAME", f } }).ToList());
             });
 
             if (!sapResult.Success)
@@ -146,31 +166,7 @@ public class SOService : ISOService
             }
 
             // 解析 DATA Table
-            var soDataList = new List<SOMasterData>();
-
-            if (sapResult.Tables.TryGetValue("DATA", out var dataTable))
-            {
-                foreach (var row in dataTable)
-                {
-                    if (row.TryGetValue("WA", out var waObj) && waObj is string waStr)
-                    {
-                        var values = waStr.Split(';');
-                        if (values.Length >= 15)
-                        {
-                            try
-                            {
-                                var data = ParseSOMasterData(values);
-                                soDataList.Add(data);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogWarning(ex, "解析資料列失敗: {Row}", waStr);
-                            }
-                        }
-                    }
-                }
-            }
-
+            var soDataList = ParseDataTable(sapResult, name);
             _logger.LogInformation("從 SAP 取得 {Name} {Count} 筆資料", name, soDataList.Count);
             result.Data = soDataList;
 
@@ -179,18 +175,15 @@ public class SOService : ISOService
             {
                 // 刪除舊資料
                 var deleteSql = $"DELETE FROM {targetTable} WHERE InvoiceDate >= @InvoiceDate";
-                var deleteCount = await _sqlHelper.ExecuteWithConnectionAsync(
+                result.DeletedCount = await _sqlHelper.ExecuteWithConnectionAsync(
                     deleteSql,
                     new { InvoiceDate = bDate },
                     SAPDSConnectionName);
-
-                result.DeletedCount = deleteCount;
-                _logger.LogInformation("刪除 {Name} 舊資料: {Count} 筆", name, deleteCount);
+                _logger.LogInformation("刪除 {Name} 舊資料: {Count} 筆", name, result.DeletedCount);
 
                 // Bulk Insert 新資料
-                var insertCount = await _sqlHelper.BulkInsertAsync(targetTable, soDataList, SAPDSConnectionName);
-                result.InsertedCount = insertCount;
-                _logger.LogInformation("新增 {Name} 資料: {Count} 筆", name, insertCount);
+                result.InsertedCount = await _sqlHelper.BulkInsertAsync(targetTable, soDataList, SAPDSConnectionName);
+                _logger.LogInformation("新增 {Name} 資料: {Count} 筆", name, result.InsertedCount);
             }
 
             result.Success = true;
@@ -208,39 +201,77 @@ public class SOService : ISOService
     }
 
     /// <summary>
+    /// 解析 SAP 回傳的 DATA Table
+    /// </summary>
+    private List<SOMasterData> ParseDataTable(SapRfcResult sapResult, string name)
+    {
+        var soDataList = new List<SOMasterData>();
+
+        if (!sapResult.Tables.TryGetValue("DATA", out var dataTable))
+        {
+            return soDataList;
+        }
+
+        foreach (var row in dataTable)
+        {
+            if (row.TryGetValue("WA", out var waObj) && waObj is string waStr)
+            {
+                var values = waStr.Split(';');
+                if (values.Length >= SapQueryFields.Length)
+                {
+                    try
+                    {
+                        soDataList.Add(ParseSOMasterData(values));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "解析資料列失敗 ({Name}): {Row}", name, waStr);
+                    }
+                }
+            }
+        }
+
+        return soDataList;
+    }
+
+    /// <summary>
     /// 解析 SAP 回傳的資料列
     /// </summary>
     private static SOMasterData ParseSOMasterData(string[] values)
     {
-        // 處理 FixedPrice 計算 (原值 * 100 / 1000 = * 0.1)
-        decimal fixedPrice = 0;
-        if (decimal.TryParse(values[9].Trim(), out var tempPrice))
-        {
-            fixedPrice = (tempPrice * 100) / 1000;
-        }
+        // 解析數值欄位
+        decimal.TryParse(values[FieldIndex.Kwmeng].Trim(), out var qty);
+        decimal.TryParse(values[FieldIndex.KbetrZtw2].Trim(), out var rawPrice);
 
-        // 處理 Qty
-        decimal qty = 0;
-        decimal.TryParse(values[7].Trim(), out qty);
+        // 計算 FixedPrice (原值 * 0.1)
+        var fixedPrice = rawPrice * 0.1m;
+
+        // 處理銷售單位轉換
+        var salesUnit = values[FieldIndex.Vrkme].Trim();
+        if (salesUnit == "BOT") salesUnit = "BT";
+
+        // 處理發票日期 (0 轉為空字串)
+        var invoiceDate = values[FieldIndex.Invodate].Trim();
+        if (invoiceDate == "0") invoiceDate = string.Empty;
 
         return new SOMasterData
         {
-            SONumber = values[0].Trim(),
-            SOItem = values[1].Trim(),
-            MaterialCode = values[2].Trim(),
+            SONumber = values[FieldIndex.Arshpno].Trim(),
+            SOItem = values[FieldIndex.Arsshpim].Trim(),
+            MaterialCode = values[FieldIndex.Matnr].Trim(),
             MaterialDesc = string.Empty,  // 透過後續 UPDATE 填入
-            SalesUnit = values[3].Trim() == "BOT" ? "BT" : values[3].Trim(),
-            SalesDate = values[4].Trim(),
-            Invoice = values[5].Trim(),
-            InvoiceDate = values[6].Trim() == "0" ? string.Empty : values[6].Trim(),
+            SalesUnit = salesUnit,
+            SalesDate = values[FieldIndex.Fkdat].Trim(),
+            Invoice = values[FieldIndex.Invono].Trim(),
+            InvoiceDate = invoiceDate,
             Qty = qty,
-            Batch = values[8].Trim(),
-            ValidityPeriod = values[12].Trim(),
+            Batch = values[FieldIndex.Charg].Trim(),
+            ValidityPeriod = values[FieldIndex.Vfdat].Trim(),
             FixedPrice = fixedPrice,
-            CreditMemo = values[10].Trim(),
-            CustomerCode = values[11].Trim(),
-            BPMOriginNumber = values[13].Trim(),
-            SPNumber = values[14].Trim()
+            CreditMemo = values[FieldIndex.Arblpno].Trim(),
+            CustomerCode = values[FieldIndex.Kunnr].Trim(),
+            BPMOriginNumber = values[FieldIndex.Formno].Trim(),
+            SPNumber = values[FieldIndex.KunnrSh].Trim()
         };
     }
 
@@ -249,7 +280,7 @@ public class SOService : ISOService
     /// </summary>
     private async Task UpdateMaterialDescAsync()
     {
-        var updateSql = @"
+        const string updateSql = @"
             UPDATE S SET S.MaterialDesc = M.MaterialDesc 
             FROM Sales_ZLSOMaster AS S 
             INNER JOIN Sales_MaterialMaster AS M ON S.MaterialCode = M.MaterialCode;
@@ -258,15 +289,7 @@ public class SOService : ISOService
             FROM Sales_ArichSOMaster AS S 
             INNER JOIN Sales_MaterialMaster AS M ON S.MaterialCode = M.MaterialCode;";
 
-        try
-        {
-            var rowsAffected = await _sqlHelper.ExecuteWithConnectionAsync(updateSql, null, SAPDSConnectionName);
-            _logger.LogInformation("更新 MaterialDesc 完成，共 {Count} 筆資料受影響", rowsAffected);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新 MaterialDesc 失敗");
-            throw;
-        }
+        var rowsAffected = await _sqlHelper.ExecuteWithConnectionAsync(updateSql, null, SAPDSConnectionName);
+        _logger.LogInformation("更新 MaterialDesc 完成，共 {Count} 筆資料受影響", rowsAffected);
     }
 }
