@@ -91,6 +91,10 @@ public class Program
             // 註冊 Business Services
             builder.Services.AddScoped<ISOService, SOService>();
 
+            // 註冊 Job 服務
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.JobExecutor>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.SOSyncJob>();
+
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
                 ?? builder.Configuration.GetConnectionString("DefaultConnection");

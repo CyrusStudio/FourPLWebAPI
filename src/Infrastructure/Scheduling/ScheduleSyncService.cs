@@ -12,7 +12,7 @@ public class ScheduleSyncService : IHostedService, IDisposable
     private readonly ILogger<ScheduleSyncService> _logger;
     private readonly IConfiguration _configuration;
     private Timer? _timer;
-    
+
     // 記錄目前已註冊的排程 (用於比對變更)
     private readonly Dictionary<string, string> _registeredJobs = new();
 
@@ -38,12 +38,12 @@ public class ScheduleSyncService : IHostedService, IDisposable
 
         // 取得同步間隔 (預設 5 分鐘)
         var intervalMinutes = _configuration.GetValue<int>("Hangfire:ScheduleSyncIntervalMinutes", 5);
-        
+
         // 啟動後立即執行一次，之後定期執行
         _timer = new Timer(
-            DoSync, 
-            null, 
-            TimeSpan.Zero, 
+            DoSync,
+            null,
+            TimeSpan.Zero,
             TimeSpan.FromMinutes(intervalMinutes));
 
         return Task.CompletedTask;
@@ -96,8 +96,8 @@ public class ScheduleSyncService : IHostedService, IDisposable
             if (!CronValidator.TryValidate(config.CronExpression, out var errorMessage))
             {
                 _logger.LogWarning(
-                    "跳過無效的排程設定 [{JobId}]: {Error}", 
-                    config.JobId, 
+                    "跳過無效的排程設定 [{JobId}]: {Error}",
+                    config.JobId,
                     errorMessage);
                 continue;
             }
@@ -126,8 +126,8 @@ public class ScheduleSyncService : IHostedService, IDisposable
         }
 
         _logger.LogDebug(
-            "排程同步完成. 總數: {Total}, 已註冊: {Registered}", 
-            configs.Count(), 
+            "排程同步完成. 總數: {Total}, 已註冊: {Registered}",
+            configs.Count(),
             _registeredJobs.Count);
     }
 
@@ -151,34 +151,10 @@ public class ScheduleSyncService : IHostedService, IDisposable
     {
         try
         {
-            // 根據 JobType 動態建立排程
-            // 這裡使用反射取得 Job 類型
-            var jobType = Type.GetType(config.JobType);
-            
-            if (jobType == null)
-            {
-                _logger.LogWarning(
-                    "找不到 Job 類型: {JobType} (排程: {JobId})", 
-                    config.JobType, 
-                    config.JobId);
-                return;
-            }
-
-            // 使用 Hangfire 的泛型方法註冊 RecurringJob
-            // 呼叫 Execute 方法
-            var executeMethod = jobType.GetMethod("Execute");
-            if (executeMethod == null)
-            {
-                _logger.LogWarning(
-                    "Job 類型缺少 Execute 方法: {JobType}", 
-                    config.JobType);
-                return;
-            }
-
-            // 使用表達式樹動態建立 Job
-            RecurringJob.AddOrUpdate(
+            // 使用 Hangfire 註冊排程，呼叫 JobExecutor 執行 Job
+            RecurringJob.AddOrUpdate<FourPLWebAPI.Jobs.JobExecutor>(
                 config.JobId,
-                () => ExecuteJobByType(config.JobType),
+                executor => executor.ExecuteAsync(config.JobType),
                 config.CronExpression,
                 new RecurringJobOptions
                 {
@@ -186,35 +162,17 @@ public class ScheduleSyncService : IHostedService, IDisposable
                 });
 
             _logger.LogInformation(
-                "已註冊/更新排程: {JobId} ({Cron}) -> {JobType}", 
-                config.JobId, 
-                config.CronExpression, 
+                "已註冊/更新排程: {JobId} ({Cron}) -> {JobType}",
+                config.JobId,
+                config.CronExpression,
                 config.JobType);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, 
-                "註冊排程失敗: {JobId}", 
+            _logger.LogError(ex,
+                "註冊排程失敗: {JobId}",
                 config.JobId);
         }
-    }
-
-    /// <summary>
-    /// 透過類型名稱執行 Job
-    /// </summary>
-    [AutomaticRetry(Attempts = 3)]
-    public static void ExecuteJobByType(string jobTypeName)
-    {
-        // 這個方法會在 Hangfire 執行時被呼叫
-        // 實際的 Job 執行邏輯由 JobExecutor 處理
-        var jobType = Type.GetType(jobTypeName);
-        if (jobType == null)
-        {
-            throw new InvalidOperationException($"找不到 Job 類型: {jobTypeName}");
-        }
-
-        // Job 的實際執行在 Hangfire 環境中透過 DI 處理
-        // 這裡只是一個橋接方法
     }
 
     /// <summary>
@@ -225,3 +183,4 @@ public class ScheduleSyncService : IHostedService, IDisposable
         _timer?.Dispose();
     }
 }
+
