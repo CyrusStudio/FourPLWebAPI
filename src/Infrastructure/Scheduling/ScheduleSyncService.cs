@@ -81,11 +81,8 @@ public class ScheduleSyncService : IHostedService, IDisposable
     /// </summary>
     private async Task SyncSchedulesAsync()
     {
-        using var scope = _scopeFactory.CreateScope();
-        var sqlHelper = scope.ServiceProvider.GetRequiredService<ISqlHelper>();
-
-        // 讀取資料庫設定
-        var configs = await GetScheduleConfigsAsync(sqlHelper);
+        // 讀取資料庫設定 (使用 HangfireConnection)
+        var configs = await GetScheduleConfigsAsync();
         var activeJobIds = new HashSet<string>();
 
         foreach (var config in configs)
@@ -132,16 +129,26 @@ public class ScheduleSyncService : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// 從資料庫讀取排程設定
+    /// 從資料庫讀取排程設定 (使用 HangfireConnection)
     /// </summary>
-    private async Task<IEnumerable<ScheduleConfig>> GetScheduleConfigsAsync(ISqlHelper sqlHelper)
+    private async Task<IEnumerable<ScheduleConfig>> GetScheduleConfigsAsync()
     {
+        var connectionString = _configuration.GetConnectionString("HangfireConnection");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            _logger.LogWarning("未設定 HangfireConnection，無法讀取排程設定");
+            return Enumerable.Empty<ScheduleConfig>();
+        }
+
         const string sql = @"
             SELECT JobId, CronExpression, JobType, IsActive, Description, LastModified
             FROM App_ScheduleConfig
             WHERE IsActive = 1";
 
-        return await sqlHelper.QueryAsync<ScheduleConfig>(sql);
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        return await Dapper.SqlMapper.QueryAsync<ScheduleConfig>(connection, sql);
     }
 
     /// <summary>
