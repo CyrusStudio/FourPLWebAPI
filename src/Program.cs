@@ -37,7 +37,7 @@ public class Program
         try
         {
             Log.Information("啟動 FourPL Web API");
-            
+
             var builder = WebApplication.CreateBuilder(args);
 
             // 使用 Serilog
@@ -89,7 +89,6 @@ public class Program
             }
 
             // 註冊 Business Services
-            builder.Services.AddScoped<IBillingService, BillingService>();
             builder.Services.AddScoped<ISOService, SOService>();
 
             // ===== Hangfire 設定 =====
@@ -160,7 +159,7 @@ public class Program
             if (!string.IsNullOrEmpty(hangfireConnectionString))
             {
                 var dashboardPath = builder.Configuration.GetValue<string>("Hangfire:DashboardPath") ?? "/hangfire";
-                
+
                 app.UseHangfireDashboard(dashboardPath, new DashboardOptions
                 {
                     // 開發環境允許匿名存取，正式環境應設定授權
