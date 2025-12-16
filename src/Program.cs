@@ -104,6 +104,7 @@ public class Program
             // 註冊 Job 服務
             builder.Services.AddScoped<FourPLWebAPI.Jobs.JobExecutor>();
             builder.Services.AddScoped<FourPLWebAPI.Jobs.SOSyncJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.SapFileProcessJob>();
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")

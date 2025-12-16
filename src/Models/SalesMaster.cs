@@ -52,26 +52,15 @@ public class SalesMaster
     public string EmployeeID { get; set; } = "";
 
     /// <summary>
-    /// 代理人
+    /// 修改者 (固定值 4PLAPI，不從 XML 讀取)
     /// </summary>
-    [XmlField("AGENT_AD")]
-    public string Agent { get; set; } = "";
+    [XmlField("ModifyBy", skipXmlRead: true)]
+    public string ModifyBy { get; set; } = "4PLAPI";
 
     /// <summary>
-    /// RSM 主管
+    /// 修改時間 (自動填入處理時間，不從 XML 讀取)
     /// </summary>
-    [XmlField("RSM_AD")]
-    public string RSMManager { get; set; } = "";
+    [XmlField("ModifyTime", skipXmlRead: true, isDateTime: true)]
+    public DateTime ModifyTime { get; set; } = DateTime.Now;
 
-    /// <summary>
-    /// NSM 主管
-    /// </summary>
-    [XmlField("NSM_AD")]
-    public string NSMManager { get; set; } = "";
-
-    /// <summary>
-    /// 修改者 (固定值 AutoEDI)
-    /// </summary>
-    [XmlField("ModifyBy")]
-    public string ModifyBy { get; set; } = "AutoEDI";
 }

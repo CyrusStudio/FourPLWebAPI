@@ -6,7 +6,7 @@ namespace FourPLWebAPI.Models;
 /// Price 主資料模型 (價格)
 /// 寫入 SAPDS.Sales_PriceMaster 資料表
 /// </summary>
-[SapMasterData("Sales_PriceMaster", "PRICE", "SalesOrg")]
+[SapMasterData("Sales_PriceMaster", "PRICE", "SalesOrg", "DistributionChannel", "PricingType", "PricingGroup", "DocCurrency", "MaterialCode", "ValidOn")]
 public class PriceMaster
 {
     /// <summary>
@@ -54,8 +54,8 @@ public class PriceMaster
     /// <summary>
     /// 發票價格
     /// </summary>
-    [XmlField("KBETR_PR00")]
-    public string InvoicePrice { get; set; } = "";
+    [XmlField("KBETR_PR00", isNumeric: true)]
+    public string? InvoicePrice { get; set; }
 
     /// <summary>
     /// 幣別
@@ -66,8 +66,8 @@ public class PriceMaster
     /// <summary>
     /// 條件價格單位
     /// </summary>
-    [XmlField("KPEIN")]
-    public string ConditionPriceUnit { get; set; } = "";
+    [XmlField("KPEIN", isNumeric: true)]
+    public string? ConditionPriceUnit { get; set; }
 
     /// <summary>
     /// 條件單位
@@ -90,26 +90,26 @@ public class PriceMaster
     /// <summary>
     /// 固定價格
     /// </summary>
-    [XmlField("KBETR_ZTW2")]
-    public string FixedPrice { get; set; } = "";
+    [XmlField("KBETR_ZTW2", isNumeric: true)]
+    public string? FixedPrice { get; set; }
 
     /// <summary>
     /// 最小數量
     /// </summary>
-    [XmlField("KNRMM")]
-    public string MinQty { get; set; } = "";
+    [XmlField("KNRMM", isNumeric: true)]
+    public string? MinQty { get; set; }
 
     /// <summary>
     /// 贈品數量
     /// </summary>
-    [XmlField("KNRNM")]
-    public string FreeGoodsQty { get; set; } = "";
+    [XmlField("KNRNM", isNumeric: true)]
+    public string? FreeGoodsQty { get; set; }
 
     /// <summary>
     /// 額外贈品數量
     /// </summary>
-    [XmlField("KNRZM")]
-    public string AdditionFreeGoodsQty { get; set; } = "";
+    [XmlField("KNRZM", isNumeric: true)]
+    public string? AdditionFreeGoodsQty { get; set; }
 
     /// <summary>
     /// 額外贈品物料代碼
@@ -148,8 +148,15 @@ public class PriceMaster
     public string BPMFormNo { get; set; } = "";
 
     /// <summary>
-    /// 修改者 (固定值 AutoEDI)
+    /// 修改者 (固定值 4PLAPI，不從 XML 讀取)
     /// </summary>
-    [XmlField("ModifyBy")]
-    public string ModifyBy { get; set; } = "AutoEDI";
+    [XmlField("ModifyBy", skipXmlRead: true)]
+    public string ModifyBy { get; set; } = "4PLAPI";
+
+    /// <summary>
+    /// 修改時間 (自動填入處理時間，不從 XML 讀取)
+    /// </summary>
+    [XmlField("ModifyTime", skipXmlRead: true, isDateTime: true)]
+    public DateTime ModifyTime { get; set; } = DateTime.Now;
+
 }

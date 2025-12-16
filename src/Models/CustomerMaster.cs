@@ -6,7 +6,7 @@ namespace FourPLWebAPI.Models;
 /// Customer 主資料模型
 /// 寫入 SAPDS.Sales_CustomerMaster 資料表
 /// </summary>
-[SapMasterData("Sales_CustomerMaster", "CUSTOMER", "Number")]
+[SapMasterData("Sales_CustomerMaster", "CUSTOMER", "Number", "SalesOrg", "DistributionChannel", "Division", "PartnerFunction", "SPNumber")]
 public class CustomerMaster
 {
     /// <summary>
@@ -174,8 +174,8 @@ public class CustomerMaster
     /// <summary>
     /// 修改時間 (自動填入處理時間，不從 XML 讀取)
     /// </summary>
-    [XmlField("ModifyTime", skipXmlRead: true)]
-    public string ModifyTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    [XmlField("ModifyTime", skipXmlRead: true, isDateTime: true)]
+    public DateTime ModifyTime { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 是否刪除 (X → 1, 其他 → 0)

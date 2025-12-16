@@ -6,7 +6,7 @@ namespace FourPLWebAPI.Models;
 /// Material 主資料模型 (物料)
 /// 寫入 SAPDS.Sales_MaterialMaster 資料表
 /// </summary>
-[SapMasterData("Sales_MaterialMaster", "MATERIAL", "MaterialCode")]
+[SapMasterData("Sales_MaterialMaster", "MATERIAL", "MaterialCode", "SalesOrg", "DistributionChannel", "Division")]
 public class MaterialMaster
 {
     /// <summary>
@@ -142,8 +142,15 @@ public class MaterialMaster
     public string PackSize { get; set; } = "";
 
     /// <summary>
-    /// 修改者 (固定值 AutoEDI)
+    /// 修改者 (固定值 4PLAPI，不從 XML 讀取)
     /// </summary>
-    [XmlField("ModifyBy")]
-    public string ModifyBy { get; set; } = "AutoEDI";
+    [XmlField("ModifyBy", skipXmlRead: true)]
+    public string ModifyBy { get; set; } = "4PLAPI";
+
+    /// <summary>
+    /// 修改時間 (自動填入處理時間，不從 XML 讀取)
+    /// </summary>
+    [XmlField("ModifyTime", skipXmlRead: true, isDateTime: true)]
+    public DateTime ModifyTime { get; set; } = DateTime.Now;
+
 }

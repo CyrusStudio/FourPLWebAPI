@@ -157,6 +157,13 @@ public class SapMasterDataRepository : ISapMasterDataRepository
                             value = string.Equals(value, "X", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
                         }
 
+                        // 處理數值欄位：空字串設為 null (讓資料庫接收 DBNull)
+                        if (mapping.IsNumeric && string.IsNullOrWhiteSpace(value))
+                        {
+                            mapping.Property.SetValue(item, null);
+                            continue;
+                        }
+
                         mapping.Property.SetValue(item, value);
                     }
 
@@ -189,8 +196,10 @@ public class SapMasterDataRepository : ISapMasterDataRepository
         var type = typeof(T);
         var typeName = type.FullName ?? type.Name;
 
-        // 取得類別標註 (使用快取)
+        // 取得類別標註和屬性對應 (使用快取)
         var masterAttr = GetCachedMasterAttribute(type, typeName);
+        var propertyMappings = GetCachedPropertyMappings(type, typeName);
+
         // 使用正式 Staging 表 (不是暫存表) 以便跨連線存取
         var stagingTableName = $"{masterAttr.TableName}_Staging_{DateTime.Now:yyyyMMddHHmmss}";
 
@@ -203,41 +212,39 @@ public class SapMasterDataRepository : ISapMasterDataRepository
             await _sqlHelper.ExecuteWithConnectionAsync(createStagingSql, null, ConnectionName);
             _logger.LogDebug("已建立 Staging 表: {StagingTable}", stagingTableName);
 
-            // 步驟 2：嘗試 Bulk Insert 到暫存表
+            // 步驟 2：嘗試 Bulk Insert 到 Staging 表
             bool bulkInsertSuccess = false;
             try
             {
                 var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, dataList, ConnectionName);
                 bulkInsertSuccess = true;
-                _logger.LogDebug("Bulk Insert 到暫存表成功，共 {Count} 筆", insertedCount);
+                _logger.LogDebug("Bulk Insert 到 Staging 表成功，共 {Count} 筆", insertedCount);
             }
             catch (Exception bulkEx)
             {
                 _logger.LogWarning(bulkEx, "Bulk Insert 失敗，降級為逐筆處理來找出問題筆");
 
-                // 清空暫存表準備逐筆處理
+                // 清空 Staging 表準備逐筆處理
                 await _sqlHelper.ExecuteWithConnectionAsync($"TRUNCATE TABLE {stagingTableName}", null, ConnectionName);
 
                 // 逐筆處理找出問題筆
                 await ProcessRowByRowAsync(stagingTableName, dataList, masterAttr, result);
             }
 
-            // 步驟 3：如果 Bulk Insert 成功，交換到正式表
+            // 步驟 3：如果 Bulk Insert 成功，使用 MERGE 進行全欄位比對
             if (bulkInsertSuccess)
             {
-                // 使用 Transaction 確保原子性
-                var swapSql = $@"
-                    BEGIN TRANSACTION;
-                    TRUNCATE TABLE {masterAttr.TableName};
-                    INSERT INTO {masterAttr.TableName} SELECT * FROM {stagingTableName};
-                    COMMIT;";
-                await _sqlHelper.ExecuteWithConnectionAsync(swapSql, null, ConnectionName);
+                // 建立 MERGE SQL (主鍵比對 + 欄位差異才 UPDATE)
+                var mergeSql = BuildFullColumnMergeSql(masterAttr.TableName, stagingTableName, propertyMappings, masterAttr.PrimaryKeyProperties);
+                _logger.LogDebug("執行 MERGE SQL: {Sql}", mergeSql);
+
+                await _sqlHelper.ExecuteWithConnectionAsync(mergeSql, null, ConnectionName);
 
                 result.SuccessCount = dataList.Count;
-                _logger.LogInformation("{TypeName} 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
+                _logger.LogInformation("{TypeName} MERGE 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
             }
 
-            // 步驟 4：清理暫存表
+            // 步驟 4：清理 Staging 表
             await _sqlHelper.ExecuteWithConnectionAsync($"DROP TABLE {stagingTableName}", null, ConnectionName);
         }
         catch (Exception ex)
@@ -257,6 +264,62 @@ public class SapMasterDataRepository : ISapMasterDataRepository
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 建立 MERGE SQL
+    /// ON 條件使用主鍵 (支援複合主鍵)，MATCHED 時比對所有欄位判斷是否需要 UPDATE
+    /// </summary>
+    private static string BuildFullColumnMergeSql(
+        string targetTable,
+        string sourceTable,
+        List<PropertyMapping> mappings,
+        string[] primaryKeyColumns)
+    {
+        // 所有欄位
+        var allColumns = mappings.Select(m => m.DbColumn).ToList();
+
+        // 非 SkipXmlRead 且非主鍵的欄位 (用於比對是否有變更)
+        var compareColumns = mappings
+            .Where(m => !m.SkipXmlRead && !primaryKeyColumns.Contains(m.DbColumn))
+            .Select(m => m.DbColumn)
+            .ToList();
+
+        // 非主鍵的欄位 (用於 UPDATE)
+        var nonPkColumns = allColumns.Where(c => !primaryKeyColumns.Contains(c)).ToList();
+
+        // 建立 ON 條件 (複合主鍵的所有欄位都要匹配)
+        var onConditions = primaryKeyColumns.Select(pk => $"target.{pk} = source.{pk}");
+        var onClause = string.Join(" AND ", onConditions);
+
+        // 建立欄位差異比對條件 (有任何一個欄位不同就要 UPDATE)
+        // 使用 NULL-safe 比較：NOT (col = col OR (col IS NULL AND col IS NULL))
+        var diffConditions = compareColumns.Select(col =>
+            $"NOT (target.{col} = source.{col} OR (target.{col} IS NULL AND source.{col} IS NULL))");
+        var diffClause = string.Join(" OR ", diffConditions);
+
+        // 建立 UPDATE SET (更新所有非主鍵欄位)
+        var updateSets = nonPkColumns.Select(col => $"target.{col} = source.{col}");
+
+        // 建立 INSERT 欄位
+        var insertColumns = string.Join(", ", allColumns);
+        var insertValues = string.Join(", ", allColumns.Select(col => $"source.{col}"));
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"MERGE INTO {targetTable} AS target");
+        sb.AppendLine($"USING {sourceTable} AS source");
+        sb.AppendLine($"ON {onClause}");
+
+        // WHEN MATCHED AND 有欄位不同: UPDATE 所有非主鍵欄位
+        if (compareColumns.Any())
+        {
+            sb.AppendLine($"WHEN MATCHED AND ({diffClause}) THEN UPDATE SET {string.Join(", ", updateSets)}");
+        }
+
+        // WHEN NOT MATCHED: INSERT 新資料
+        sb.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({insertColumns}) VALUES ({insertValues});");
+
+        return sb.ToString();
     }
 
     /// <summary>
@@ -299,15 +362,11 @@ public class SapMasterDataRepository : ISapMasterDataRepository
             }
         }
 
-        // 如果有成功的資料，交換到正式表
+        // 如果有成功的資料，使用 MERGE 更新正式表
         if (result.SuccessCount > 0)
         {
-            var swapSql = $@"
-                BEGIN TRANSACTION;
-                TRUNCATE TABLE {masterAttr.TableName};
-                INSERT INTO {masterAttr.TableName} SELECT * FROM {tempTableName};
-                COMMIT;";
-            await _sqlHelper.ExecuteWithConnectionAsync(swapSql, null, ConnectionName);
+            var mergeSql = BuildFullColumnMergeSql(masterAttr.TableName, tempTableName, propertyMappings, masterAttr.PrimaryKeyProperties);
+            await _sqlHelper.ExecuteWithConnectionAsync(mergeSql, null, ConnectionName);
 
             _logger.LogInformation("{TypeName} 逐筆處理完成，成功 {Success} 筆，失敗 {Failed} 筆",
                 type.Name, result.SuccessCount, result.FailedCount);
@@ -392,7 +451,9 @@ public class SapMasterDataRepository : ISapMasterDataRepository
                     XmlField = xmlAttr.XmlElementName,
                     DbColumn = prop.Name,
                     IsBooleanFlag = xmlAttr.IsBooleanFlag,
-                    SkipXmlRead = xmlAttr.SkipXmlRead
+                    SkipXmlRead = xmlAttr.SkipXmlRead,
+                    IsNumeric = xmlAttr.IsNumeric,
+                    IsDateTime = xmlAttr.IsDateTime
                 });
             }
         }
@@ -412,5 +473,7 @@ public class SapMasterDataRepository : ISapMasterDataRepository
         public string DbColumn { get; set; } = "";
         public bool IsBooleanFlag { get; set; }
         public bool SkipXmlRead { get; set; }
+        public bool IsNumeric { get; set; }
+        public bool IsDateTime { get; set; }
     }
 }
