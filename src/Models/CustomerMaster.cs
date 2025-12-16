@@ -166,14 +166,20 @@ public class CustomerMaster
     public string SalesType { get; set; } = "";
 
     /// <summary>
-    /// 修改者 (固定值 AutoEDI)
+    /// 修改者 (固定值 4PLAPI，不從 XML 讀取)
     /// </summary>
-    [XmlField("ModifyBy")]
-    public string ModifyBy { get; set; } = "AutoEDI";
+    [XmlField("ModifyBy", skipXmlRead: true)]
+    public string ModifyBy { get; set; } = "4PLAPI";
 
     /// <summary>
-    /// 是否刪除
+    /// 修改時間 (自動填入處理時間，不從 XML 讀取)
     /// </summary>
-    [XmlField("DEL")]
+    [XmlField("ModifyTime", skipXmlRead: true)]
+    public string ModifyTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+    /// <summary>
+    /// 是否刪除 (X → 1, 其他 → 0)
+    /// </summary>
+    [XmlField("DEL", isBooleanFlag: true)]
     public string IsDelete { get; set; } = "";
 }

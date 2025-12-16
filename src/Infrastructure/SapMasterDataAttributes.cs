@@ -13,12 +13,28 @@ public class XmlFieldAttribute : Attribute
     public string XmlElementName { get; }
 
     /// <summary>
+    /// 是否為布林旗標欄位
+    /// 如果為 true，則 "X" → "1"，其他值 → "0"
+    /// </summary>
+    public bool IsBooleanFlag { get; }
+
+    /// <summary>
+    /// 是否跳過 XML 讀取 (保留預設值)
+    /// 適用於 ModifyBy, ModifyTime 等程式設定的欄位
+    /// </summary>
+    public bool SkipXmlRead { get; }
+
+    /// <summary>
     /// 建構函式
     /// </summary>
-    /// <param name="xmlElementName">XML 元素名稱</param>
-    public XmlFieldAttribute(string xmlElementName)
+    /// <param name="xmlElementName">XML 元素名稱 (同時也是資料庫欄位名稱)</param>
+    /// <param name="isBooleanFlag">是否為布林旗標 (X→1, 否則→0)</param>
+    /// <param name="skipXmlRead">是否跳過 XML 讀取 (保留預設值)</param>
+    public XmlFieldAttribute(string xmlElementName, bool isBooleanFlag = false, bool skipXmlRead = false)
     {
         XmlElementName = xmlElementName;
+        IsBooleanFlag = isBooleanFlag;
+        SkipXmlRead = skipXmlRead;
     }
 }
 

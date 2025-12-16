@@ -107,7 +107,7 @@ public class Program
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
-                ?? builder.Configuration.GetConnectionString("DefaultConnection");
+                ?? builder.Configuration.GetConnectionString("SAPDSConnection");
 
             if (!string.IsNullOrEmpty(hangfireConnectionString))
             {

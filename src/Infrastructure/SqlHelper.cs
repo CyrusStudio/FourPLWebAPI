@@ -23,8 +23,8 @@ public class SqlHelper : ISqlHelper
     public SqlHelper(IConfiguration configuration, ILogger<SqlHelper> logger)
     {
         _configuration = configuration;
-        _connectionString = configuration.GetConnectionString("DefaultConnection") 
-            ?? throw new InvalidOperationException("未設定 DefaultConnection 連線字串");
+        _connectionString = configuration.GetConnectionString("SAPDSConnection")
+            ?? throw new InvalidOperationException("未設定 SAPDSConnection 連線字串");
         _logger = logger;
     }
 
@@ -32,10 +32,10 @@ public class SqlHelper : ISqlHelper
     public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
     {
         _logger.LogDebug("執行 SQL 查詢: {Sql}", sql);
-        
+
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        
+
         return await connection.QueryAsync<T>(sql, param);
     }
 
@@ -43,10 +43,10 @@ public class SqlHelper : ISqlHelper
     public async Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
     {
         _logger.LogDebug("執行 SQL 查詢 (單一結果): {Sql}", sql);
-        
+
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        
+
         return await connection.QueryFirstOrDefaultAsync<T>(sql, param);
     }
 
@@ -54,10 +54,10 @@ public class SqlHelper : ISqlHelper
     public async Task<int> ExecuteAsync(string sql, object? param = null)
     {
         _logger.LogDebug("執行 SQL 命令: {Sql}", sql);
-        
+
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        
+
         return await connection.ExecuteAsync(sql, param);
     }
 
@@ -65,13 +65,13 @@ public class SqlHelper : ISqlHelper
     public async Task<IEnumerable<T>> ExecuteStoredProcedureAsync<T>(string storedProcedure, object? param = null)
     {
         _logger.LogDebug("執行預存程序: {StoredProcedure}", storedProcedure);
-        
+
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        
+
         return await connection.QueryAsync<T>(
-            storedProcedure, 
-            param, 
+            storedProcedure,
+            param,
             commandType: CommandType.StoredProcedure);
     }
 
@@ -80,7 +80,7 @@ public class SqlHelper : ISqlHelper
     {
         var connStr = GetConnectionString(connectionStringName);
         var dataList = data.ToList();
-        
+
         if (dataList.Count == 0)
         {
             _logger.LogDebug("BulkInsert 無資料可寫入");
@@ -88,10 +88,10 @@ public class SqlHelper : ISqlHelper
         }
 
         _logger.LogDebug("執行 Bulk Insert 至 {TableName}，資料筆數: {Count}", tableName, dataList.Count);
-        
+
         // 建立 DataTable
         var dataTable = CreateDataTable(dataList);
-        
+
         await using var connection = new SqlConnection(connStr);
         await connection.OpenAsync();
 
@@ -125,10 +125,10 @@ public class SqlHelper : ISqlHelper
     {
         var connStr = GetConnectionString(connectionStringName);
         _logger.LogDebug("執行 SQL 命令 (使用 {ConnectionName}): {Sql}", connectionStringName, sql);
-        
+
         await using var connection = new SqlConnection(connStr);
         await connection.OpenAsync();
-        
+
         return await connection.ExecuteAsync(sql, param);
     }
 

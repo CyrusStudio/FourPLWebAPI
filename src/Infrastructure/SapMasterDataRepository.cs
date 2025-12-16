@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
 using System.Xml.Linq;
 
 namespace FourPLWebAPI.Infrastructure;
@@ -19,17 +18,73 @@ public interface ISapMasterDataRepository
     Task<IEnumerable<T>> ReadFromXmlAsync<T>(string filePath) where T : class, new();
 
     /// <summary>
-    /// 批次 UPSERT 資料至資料庫
+    /// 清空資料表後批次 Insert (適用於全量資料匯入)
     /// </summary>
     /// <typeparam name="T">Model 類型 (需標註 SapMasterDataAttribute)</typeparam>
     /// <param name="data">資料清單</param>
-    /// <returns>處理筆數</returns>
-    Task<int> UpsertBatchAsync<T>(IEnumerable<T> data) where T : class, new();
+    /// <returns>處理結果</returns>
+    Task<UpsertBatchResult> TruncateAndBulkInsertAsync<T>(IEnumerable<T> data) where T : class, new();
+}
+
+/// <summary>
+/// 批次處理結果
+/// </summary>
+public class UpsertBatchResult
+{
+    /// <summary>
+    /// 是否全部成功
+    /// </summary>
+    public bool Success => FailedItems.Count == 0;
+
+    /// <summary>
+    /// 成功筆數
+    /// </summary>
+    public int SuccessCount { get; set; }
+
+    /// <summary>
+    /// 失敗筆數
+    /// </summary>
+    public int FailedCount => FailedItems.Count;
+
+    /// <summary>
+    /// 總筆數
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// 失敗項目清單
+    /// </summary>
+    public List<FailedItem> FailedItems { get; set; } = new();
+
+    /// <summary>
+    /// 錯誤摘要訊息
+    /// </summary>
+    public string? ErrorSummary { get; set; }
+}
+
+/// <summary>
+/// 失敗項目資訊
+/// </summary>
+public class FailedItem
+{
+    /// <summary>
+    /// 主鍵值
+    /// </summary>
+    public string PrimaryKey { get; set; } = "";
+
+    /// <summary>
+    /// 錯誤訊息
+    /// </summary>
+    public string ErrorMessage { get; set; } = "";
+
+    /// <summary>
+    /// 原始資料 (JSON 格式)
+    /// </summary>
+    public string? RawData { get; set; }
 }
 
 /// <summary>
 /// 通用 SAP 主資料 Repository 實作
-/// 使用快取優化反射效能
 /// </summary>
 public class SapMasterDataRepository : ISapMasterDataRepository
 {
@@ -39,9 +94,6 @@ public class SapMasterDataRepository : ISapMasterDataRepository
 
     // 快取：屬性對應 (Key: Type FullName)
     private static readonly ConcurrentDictionary<string, List<PropertyMapping>> PropertyMappingsCache = new();
-
-    // 快取：MERGE SQL (Key: Type FullName)
-    private static readonly ConcurrentDictionary<string, string> MergeSqlCache = new();
 
     // 快取：SapMasterDataAttribute (Key: Type FullName)
     private static readonly ConcurrentDictionary<string, SapMasterDataAttribute> MasterAttributeCache = new();
@@ -91,7 +143,20 @@ public class SapMasterDataRepository : ISapMasterDataRepository
 
                     foreach (var mapping in propertyMappings)
                     {
+                        // 跳過不從 XML 讀取的欄位 (保留預設值)
+                        if (mapping.SkipXmlRead)
+                        {
+                            continue;
+                        }
+
                         var value = row.Element(mapping.XmlField)?.Value?.Trim() ?? "";
+
+                        // 處理布林旗標轉換：X → 1，其他 → 0
+                        if (mapping.IsBooleanFlag)
+                        {
+                            value = string.Equals(value, "X", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
+                        }
+
                         mapping.Property.SetValue(item, value);
                     }
 
@@ -111,41 +176,172 @@ public class SapMasterDataRepository : ISapMasterDataRepository
     }
 
     /// <inheritdoc />
-    public async Task<int> UpsertBatchAsync<T>(IEnumerable<T> data) where T : class, new()
+    public async Task<UpsertBatchResult> TruncateAndBulkInsertAsync<T>(IEnumerable<T> data) where T : class, new()
     {
-        var count = 0;
+        var dataList = data.ToList();
+        var result = new UpsertBatchResult { TotalCount = dataList.Count };
+
+        if (dataList.Count == 0)
+        {
+            return result;
+        }
+
         var type = typeof(T);
         var typeName = type.FullName ?? type.Name;
 
         // 取得類別標註 (使用快取)
         var masterAttr = GetCachedMasterAttribute(type, typeName);
+        // 使用正式 Staging 表 (不是暫存表) 以便跨連線存取
+        var stagingTableName = $"{masterAttr.TableName}_Staging_{DateTime.Now:yyyyMMddHHmmss}";
 
-        // 取得屬性對應 (使用快取)
-        var propertyMappings = GetCachedPropertyMappings(type, typeName);
+        _logger.LogInformation("開始處理 {TypeName}，共 {Count} 筆", type.Name, dataList.Count);
 
-        // 取得 MERGE SQL (使用快取)
-        var sql = GetCachedMergeSql(typeName, masterAttr, propertyMappings);
-
-        foreach (var item in data)
+        try
         {
+            // 步驟 1：建立 Staging 表 (複製正式表結構)
+            var createStagingSql = $"SELECT TOP 0 * INTO {stagingTableName} FROM {masterAttr.TableName}";
+            await _sqlHelper.ExecuteWithConnectionAsync(createStagingSql, null, ConnectionName);
+            _logger.LogDebug("已建立 Staging 表: {StagingTable}", stagingTableName);
+
+            // 步驟 2：嘗試 Bulk Insert 到暫存表
+            bool bulkInsertSuccess = false;
             try
             {
-                // 建立參數物件
-                var parameters = BuildParameters(item, propertyMappings);
-
-                await _sqlHelper.ExecuteWithConnectionAsync(sql, parameters, ConnectionName);
-                count++;
+                var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, dataList, ConnectionName);
+                bulkInsertSuccess = true;
+                _logger.LogDebug("Bulk Insert 到暫存表成功，共 {Count} 筆", insertedCount);
             }
-            catch (Exception ex)
+            catch (Exception bulkEx)
             {
-                var pkValue = GetPrimaryKeyValue(item, masterAttr.PrimaryKeyProperty);
-                _logger.LogError(ex, "{TypeName} {PK} 寫入失敗", type.Name, pkValue);
-                throw;
+                _logger.LogWarning(bulkEx, "Bulk Insert 失敗，降級為逐筆處理來找出問題筆");
+
+                // 清空暫存表準備逐筆處理
+                await _sqlHelper.ExecuteWithConnectionAsync($"TRUNCATE TABLE {stagingTableName}", null, ConnectionName);
+
+                // 逐筆處理找出問題筆
+                await ProcessRowByRowAsync(stagingTableName, dataList, masterAttr, result);
+            }
+
+            // 步驟 3：如果 Bulk Insert 成功，交換到正式表
+            if (bulkInsertSuccess)
+            {
+                // 使用 Transaction 確保原子性
+                var swapSql = $@"
+                    BEGIN TRANSACTION;
+                    TRUNCATE TABLE {masterAttr.TableName};
+                    INSERT INTO {masterAttr.TableName} SELECT * FROM {stagingTableName};
+                    COMMIT;";
+                await _sqlHelper.ExecuteWithConnectionAsync(swapSql, null, ConnectionName);
+
+                result.SuccessCount = dataList.Count;
+                _logger.LogInformation("{TypeName} 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
+            }
+
+            // 步驟 4：清理暫存表
+            await _sqlHelper.ExecuteWithConnectionAsync($"DROP TABLE {stagingTableName}", null, ConnectionName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{TypeName} 處理失敗", type.Name);
+            result.ErrorSummary = ex.Message;
+
+            if (result.FailedItems.Count == 0)
+            {
+                result.FailedItems.Add(new FailedItem
+                {
+                    PrimaryKey = "UNKNOWN",
+                    ErrorMessage = ex.Message,
+                    RawData = $"共 {dataList.Count} 筆資料"
+                });
             }
         }
 
-        _logger.LogInformation("{TypeName} 批次寫入完成，共 {Count} 筆", type.Name, count);
-        return count;
+        return result;
+    }
+
+    /// <summary>
+    /// 逐筆處理資料 (用於 Bulk Insert 失敗時的降級處理)
+    /// </summary>
+    private async Task ProcessRowByRowAsync<T>(
+        string tempTableName,
+        List<T> dataList,
+        SapMasterDataAttribute masterAttr,
+        UpsertBatchResult result) where T : class, new()
+    {
+        var type = typeof(T);
+        var propertyMappings = GetCachedPropertyMappings(type, type.FullName ?? type.Name);
+
+        // 建立 INSERT SQL
+        var columns = propertyMappings.Select(m => m.DbColumn).ToList();
+        var parameters = propertyMappings.Select(m => $"@{m.DbColumn}").ToList();
+        var insertSql = $"INSERT INTO {tempTableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", parameters)})";
+
+        foreach (var item in dataList)
+        {
+            try
+            {
+                var paramObj = BuildParameters(item, propertyMappings);
+                await _sqlHelper.ExecuteWithConnectionAsync(insertSql, paramObj, ConnectionName);
+                result.SuccessCount++;
+            }
+            catch (Exception ex)
+            {
+                var pkValue = GetPrimaryKeyValue(item, masterAttr.PrimaryKeyProperty)?.ToString() ?? "Unknown";
+
+                _logger.LogWarning(ex, "{TypeName} {PK} 寫入失敗", type.Name, pkValue);
+
+                result.FailedItems.Add(new FailedItem
+                {
+                    PrimaryKey = pkValue,
+                    ErrorMessage = ex.Message,
+                    RawData = System.Text.Json.JsonSerializer.Serialize(item)
+                });
+            }
+        }
+
+        // 如果有成功的資料，交換到正式表
+        if (result.SuccessCount > 0)
+        {
+            var swapSql = $@"
+                BEGIN TRANSACTION;
+                TRUNCATE TABLE {masterAttr.TableName};
+                INSERT INTO {masterAttr.TableName} SELECT * FROM {tempTableName};
+                COMMIT;";
+            await _sqlHelper.ExecuteWithConnectionAsync(swapSql, null, ConnectionName);
+
+            _logger.LogInformation("{TypeName} 逐筆處理完成，成功 {Success} 筆，失敗 {Failed} 筆",
+                type.Name, result.SuccessCount, result.FailedCount);
+        }
+
+        if (result.FailedItems.Count > 0)
+        {
+            result.ErrorSummary = $"處理完成，成功 {result.SuccessCount} 筆，失敗 {result.FailedCount} 筆";
+        }
+    }
+
+    /// <summary>
+    /// 建立參數物件
+    /// </summary>
+    private static object BuildParameters<T>(T item, List<PropertyMapping> mappings) where T : class
+    {
+        var expando = new System.Dynamic.ExpandoObject() as IDictionary<string, object?>;
+
+        foreach (var mapping in mappings)
+        {
+            var value = mapping.Property.GetValue(item);
+            expando[mapping.DbColumn] = value;
+        }
+
+        return expando;
+    }
+
+    /// <summary>
+    /// 取得主鍵值
+    /// </summary>
+    private static object? GetPrimaryKeyValue<T>(T item, string pkPropertyName) where T : class
+    {
+        var prop = typeof(T).GetProperty(pkPropertyName);
+        return prop?.GetValue(item);
     }
 
     #region 快取取得方法
@@ -174,14 +370,6 @@ public class SapMasterDataRepository : ISapMasterDataRepository
         return PropertyMappingsCache.GetOrAdd(typeName, _ => BuildPropertyMappings(type));
     }
 
-    /// <summary>
-    /// 取得快取的 MERGE SQL
-    /// </summary>
-    private static string GetCachedMergeSql(string typeName, SapMasterDataAttribute attr, List<PropertyMapping> mappings)
-    {
-        return MergeSqlCache.GetOrAdd(typeName, _ => BuildMergeSql(attr, mappings));
-    }
-
     #endregion
 
     #region 私有方法
@@ -202,61 +390,14 @@ public class SapMasterDataRepository : ISapMasterDataRepository
                 {
                     Property = prop,
                     XmlField = xmlAttr.XmlElementName,
-                    DbColumn = prop.Name
+                    DbColumn = prop.Name,
+                    IsBooleanFlag = xmlAttr.IsBooleanFlag,
+                    SkipXmlRead = xmlAttr.SkipXmlRead
                 });
             }
         }
 
         return mappings;
-    }
-
-    /// <summary>
-    /// 建立 MERGE SQL 語句
-    /// </summary>
-    private static string BuildMergeSql(SapMasterDataAttribute attr, List<PropertyMapping> mappings)
-    {
-        var columns = mappings.Select(m => m.DbColumn).ToList();
-        var parameters = mappings.Select(m => $"@{m.DbColumn}").ToList();
-        var updateSets = mappings
-            .Where(m => m.DbColumn != attr.PrimaryKeyProperty)
-            .Select(m => $"{m.DbColumn} = @{m.DbColumn}");
-
-        var sb = new StringBuilder();
-        sb.AppendLine($"MERGE INTO {attr.TableName} AS target");
-        sb.AppendLine($"USING (SELECT @{attr.PrimaryKeyProperty} AS {attr.PrimaryKeyProperty}) AS source");
-        sb.AppendLine($"ON target.{attr.PrimaryKeyProperty} = source.{attr.PrimaryKeyProperty}");
-        sb.AppendLine("WHEN MATCHED THEN");
-        sb.AppendLine($"    UPDATE SET {string.Join(", ", updateSets)}");
-        sb.AppendLine("WHEN NOT MATCHED THEN");
-        sb.AppendLine($"    INSERT ({string.Join(", ", columns)})");
-        sb.AppendLine($"    VALUES ({string.Join(", ", parameters)});");
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// 建立參數物件
-    /// </summary>
-    private static object BuildParameters<T>(T item, List<PropertyMapping> mappings) where T : class
-    {
-        var expando = new System.Dynamic.ExpandoObject() as IDictionary<string, object?>;
-
-        foreach (var mapping in mappings)
-        {
-            var value = mapping.Property.GetValue(item);
-            expando[mapping.DbColumn] = value;
-        }
-
-        return expando;
-    }
-
-    /// <summary>
-    /// 取得主索引值
-    /// </summary>
-    private static object? GetPrimaryKeyValue<T>(T item, string pkPropertyName) where T : class
-    {
-        var prop = typeof(T).GetProperty(pkPropertyName);
-        return prop?.GetValue(item);
     }
 
     #endregion
@@ -269,5 +410,7 @@ public class SapMasterDataRepository : ISapMasterDataRepository
         public PropertyInfo Property { get; set; } = null!;
         public string XmlField { get; set; } = "";
         public string DbColumn { get; set; } = "";
+        public bool IsBooleanFlag { get; set; }
+        public bool SkipXmlRead { get; set; }
     }
 }

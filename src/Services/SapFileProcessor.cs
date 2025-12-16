@@ -294,10 +294,10 @@ public class SapFileProcessor : ISapFileProcessor
     {
         return fileType switch
         {
-            "Customer" => await ProcessFileAsync<Models.CustomerMaster>(filePath, "Customer"),
-            "Material" => await ProcessFileAsync<Models.MaterialMaster>(filePath, "Material"),
-            "Price" => await ProcessFileAsync<Models.PriceMaster>(filePath, "Price"),
-            "Sales" => await ProcessFileAsync<Models.SalesMaster>(filePath, "Sales"),
+            "Customer" => await ProcessFileAsync<Models.CustomerMaster>(fileType, filePath, "Customer"),
+            "Material" => await ProcessFileAsync<Models.MaterialMaster>(fileType, filePath, "Material"),
+            "Price" => await ProcessFileAsync<Models.PriceMaster>(fileType, filePath, "Price"),
+            "Sales" => await ProcessFileAsync<Models.SalesMaster>(fileType, filePath, "Sales"),
             _ => LogUnsupportedTypeAndReturnFalse(fileType)
         };
     }
@@ -318,12 +318,14 @@ public class SapFileProcessor : ISapFileProcessor
     /// <summary>
     /// 泛型檔案處理方法
     /// 讀取 XML 後寫入對應的資料庫資料表
+    /// 失敗時產生錯誤 Log 檔案
     /// </summary>
     /// <typeparam name="T">Model 類型 (需標註 SapMasterDataAttribute)</typeparam>
+    /// <param name="fileType">檔案類型 (用於取得失敗資料夾路徑)</param>
     /// <param name="filePath">XML 檔案路徑</param>
     /// <param name="typeName">類型名稱 (用於記錄)</param>
     /// <returns>處理是否成功</returns>
-    protected virtual async Task<bool> ProcessFileAsync<T>(string filePath, string typeName) where T : class, new()
+    protected virtual async Task<bool> ProcessFileAsync<T>(string fileType, string filePath, string typeName) where T : class, new()
     {
         try
         {
@@ -339,9 +341,20 @@ public class SapFileProcessor : ISapFileProcessor
                 return true; // 空檔案視為成功
             }
 
-            // 寫入資料庫
-            var count = await _masterDataRepository.UpsertBatchAsync(dataList);
-            _logger.LogInformation("{TypeName} 檔案處理完成: {FilePath}, 共 {Count} 筆", typeName, filePath, count);
+            // 使用 TRUNCATE + Bulk Insert 方法 (全量資料匯入)
+            var result = await _masterDataRepository.TruncateAndBulkInsertAsync(dataList);
+
+            _logger.LogInformation("{TypeName} 檔案處理完成: {FilePath}, 成功 {SuccessCount} 筆, 失敗 {FailedCount} 筆",
+                typeName, filePath, result.SuccessCount, result.FailedCount);
+
+            // 如果有錯誤，產生錯誤 Log 檔案 (放到失敗資料夾)
+            if (result.FailedItems.Count > 0)
+            {
+                var section = _processingSection.GetSection(fileType);
+                var failPath = section["FailPath"] ?? "";
+                await WriteErrorLogAsync(filePath, typeName, result, failPath);
+                return false; // 有錯誤則視為失敗
+            }
 
             return true;
         }
@@ -349,6 +362,57 @@ public class SapFileProcessor : ISapFileProcessor
         {
             _logger.LogError(ex, "{TypeName} 檔案處理失敗: {FilePath}", typeName, filePath);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 產生錯誤 Log 檔案
+    /// </summary>
+    /// <param name="originalFilePath">原始 XML 檔案路徑</param>
+    /// <param name="typeName">類型名稱</param>
+    /// <param name="result">處理結果</param>
+    /// <param name="failPath">失敗資料夾路徑</param>
+    private async Task WriteErrorLogAsync(string originalFilePath, string typeName,
+        FourPLWebAPI.Infrastructure.UpsertBatchResult result, string failPath)
+    {
+        try
+        {
+            // 使用失敗資料夾路徑，如果沒有則使用原始檔案目錄
+            var directory = !string.IsNullOrEmpty(failPath)
+                ? failPath
+                : Path.GetDirectoryName(originalFilePath) ?? "";
+            EnsureDirectoryExists(directory);
+
+            var originalFileName = Path.GetFileNameWithoutExtension(originalFilePath);
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var logFileName = $"{originalFileName}_Error_{timestamp}.log";
+            var logFilePath = Path.Combine(directory, logFileName);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"=== {typeName} 處理錯誤報告 ===");
+            sb.AppendLine($"原始檔案: {originalFilePath}");
+            sb.AppendLine($"處理時間: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"總筆數: {result.TotalCount}");
+            sb.AppendLine($"成功筆數: {result.SuccessCount}");
+            sb.AppendLine($"失敗筆數: {result.FailedCount}");
+            sb.AppendLine();
+            sb.AppendLine("=== 失敗項目明細 ===");
+            sb.AppendLine();
+
+            foreach (var item in result.FailedItems)
+            {
+                sb.AppendLine($"主鍵: {item.PrimaryKey}");
+                sb.AppendLine($"錯誤訊息: {item.ErrorMessage}");
+                sb.AppendLine($"原始資料: {item.RawData}");
+                sb.AppendLine("---");
+            }
+
+            await File.WriteAllTextAsync(logFilePath, sb.ToString(), System.Text.Encoding.UTF8);
+            _logger.LogWarning("已產生錯誤 Log 檔案: {LogFilePath}", logFilePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "產生錯誤 Log 檔案失敗");
         }
     }
 
