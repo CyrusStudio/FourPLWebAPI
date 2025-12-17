@@ -451,7 +451,7 @@ public class DataTransformService : IDataTransformService
 
                 foreach (var detail in group.OrderBy(x => x.ItemNo))
                 {
-                    var refItem = itemSerialNo;
+                    var refItem = detail.ItemNo;  // 使用原始項次（如 10、20、30）
 
                     // ZTW1
                     exports.Add(CreateBatchOrderExport(detail, formNo, itemSerialNo++, refItem, approvalDate, "ZTW1", "D"));
