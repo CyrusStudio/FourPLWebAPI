@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Reflection;
 using Dapper;
@@ -148,11 +149,20 @@ public class SqlHelper : ISqlHelper
 
     /// <summary>
     /// 將物件集合轉換為 DataTable
+    /// 自動排除標記為 DatabaseGeneratedOption.Identity 的欄位
     /// </summary>
     private static DataTable CreateDataTable<T>(List<T> data)
     {
         var dataTable = new DataTable();
-        var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        // 取得所有屬性，排除 IDENTITY 欄位
+        var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p =>
+            {
+                var attr = p.GetCustomAttribute<DatabaseGeneratedAttribute>();
+                return attr?.DatabaseGeneratedOption != DatabaseGeneratedOption.Identity;
+            })
+            .ToArray();
 
         // 建立欄位
         foreach (var prop in properties)
@@ -174,4 +184,36 @@ public class SqlHelper : ISqlHelper
 
         return dataTable;
     }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<T>> QueryWithConnectionAsync<T>(string sql, object? param, string connectionStringName)
+    {
+        var connStr = GetConnectionString(connectionStringName);
+        _logger.LogDebug("執行 SQL 查詢 (使用 {ConnectionName}): {Sql}", connectionStringName, sql);
+
+        await using var connection = new SqlConnection(connStr);
+        await connection.OpenAsync();
+
+        return await connection.QueryAsync<T>(sql, param);
+    }
+
+    /// <inheritdoc />
+    public async Task<T?> QueryFirstOrDefaultWithConnectionAsync<T>(string sql, object? param, string connectionStringName)
+    {
+        var connStr = GetConnectionString(connectionStringName);
+        _logger.LogDebug("執行 SQL 查詢單一結果 (使用 {ConnectionName}): {Sql}", connectionStringName, sql);
+
+        await using var connection = new SqlConnection(connStr);
+        await connection.OpenAsync();
+
+        return await connection.QueryFirstOrDefaultAsync<T>(sql, param);
+    }
+
+    /// <inheritdoc />
+    public string GetConnectionStringByName(string connectionStringName)
+    {
+        return GetConnectionString(connectionStringName);
+    }
 }
+
+

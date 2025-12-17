@@ -158,6 +158,10 @@ public class ScheduleSyncService : IHostedService, IDisposable
     {
         try
         {
+            // 取得環境名稱，開發環境忽略錯過的執行
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var isDevelopment = environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
+
             // 使用 Hangfire 註冊排程，呼叫 JobExecutor 執行 Job
             RecurringJob.AddOrUpdate<FourPLWebAPI.Jobs.JobExecutor>(
                 config.JobId,
@@ -165,7 +169,11 @@ public class ScheduleSyncService : IHostedService, IDisposable
                 config.CronExpression,
                 new RecurringJobOptions
                 {
-                    TimeZone = TimeZoneInfo.Local
+                    TimeZone = TimeZoneInfo.Local,
+                    // 開發環境忽略錯過的執行，避免啟動時立即補跑
+                    MisfireHandling = isDevelopment
+                        ? MisfireHandlingMode.Ignorable
+                        : MisfireHandlingMode.Relaxed
                 });
 
             _logger.LogInformation(

@@ -100,6 +100,7 @@ public class Program
             builder.Services.AddScoped<IDataExchangeService, DataExchangeService>();
             builder.Services.AddScoped<ISapMasterDataRepository, SapMasterDataRepository>();
             builder.Services.AddScoped<ISapFileProcessor, SapFileProcessor>();
+            builder.Services.AddScoped<IDataTransformService, DataTransformService>();
 
             // 註冊 Job 服務
             builder.Services.AddScoped<FourPLWebAPI.Jobs.JobExecutor>();

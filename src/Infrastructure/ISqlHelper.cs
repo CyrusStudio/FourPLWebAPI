@@ -61,4 +61,32 @@ public interface ISqlHelper
     /// <param name="connectionStringName">連線字串名稱</param>
     /// <returns>受影響的資料列數</returns>
     Task<int> ExecuteWithConnectionAsync(string sql, object? param, string connectionStringName);
+
+    /// <summary>
+    /// 使用指定連線字串執行參數化查詢
+    /// </summary>
+    /// <typeparam name="T">結果類型</typeparam>
+    /// <param name="sql">SQL 查詢語句</param>
+    /// <param name="param">查詢參數 (可選)</param>
+    /// <param name="connectionStringName">連線字串名稱</param>
+    /// <returns>查詢結果集合</returns>
+    Task<IEnumerable<T>> QueryWithConnectionAsync<T>(string sql, object? param, string connectionStringName);
+
+    /// <summary>
+    /// 使用指定連線字串執行查詢，回傳單一結果或預設值
+    /// </summary>
+    /// <typeparam name="T">結果類型</typeparam>
+    /// <param name="sql">SQL 查詢語句</param>
+    /// <param name="param">查詢參數 (可選)</param>
+    /// <param name="connectionStringName">連線字串名稱</param>
+    /// <returns>查詢結果或預設值</returns>
+    Task<T?> QueryFirstOrDefaultWithConnectionAsync<T>(string sql, object? param, string connectionStringName);
+
+    /// <summary>
+    /// 根據連線字串名稱取得連線字串
+    /// </summary>
+    /// <param name="connectionStringName">連線字串名稱</param>
+    /// <returns>連線字串</returns>
+    string GetConnectionStringByName(string connectionStringName);
 }
+
