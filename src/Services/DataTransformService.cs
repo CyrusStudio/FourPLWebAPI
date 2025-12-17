@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using FourPLWebAPI.Infrastructure;
 using FourPLWebAPI.Models;
 using FourPLWebAPI.Extensions;
@@ -14,19 +15,43 @@ public class DataTransformService : IDataTransformService
 {
     private readonly ISqlHelper _sqlHelper;
     private readonly ILogger<DataTransformService> _logger;
+    private readonly string _sapdsDatabase;
 
     // 連線字串名稱常數
     private const string BpmProConnection = "BPMProConnection";
     private const string SapdsConnection = "SAPDSConnection";
 
-    // 目標資料表名稱
-    private const string ExportVerifyTable = "[dbo].[FourPL_DataTrans_Export_Verify]";
-    private const string QueueVerifyTable = "[dbo].[FourPL_DataTrans_Queue_Verify]";
+    // 目標資料表名稱（不含資料庫前綴）
+    private const string ExportTableName = "[dbo].[FourPL_DataTrans_Export_Verify]";
+    private const string QueueTableName = "[dbo].[FourPL_DataTrans_Queue_Verify]";
 
-    public DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger)
+    // 完整表名（含資料庫前綴），供 BulkInsert 使用
+    private string ExportVerifyTable => ExportTableName;
+    private string QueueVerifyTable => QueueTableName;
+
+    // 完整表名（含資料庫前綴），供跨資料庫 SQL 使用
+    private string FullExportTable => $"[{_sapdsDatabase}].{ExportTableName}";
+    private string FullQueueTable => $"[{_sapdsDatabase}].{QueueTableName}";
+
+    public DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger, IConfiguration configuration)
     {
         _sqlHelper = sqlHelper;
         _logger = logger;
+
+        // 從連線字串解析資料庫名稱
+        var connStr = configuration.GetConnectionString(SapdsConnection)
+            ?? throw new InvalidOperationException($"未設定 {SapdsConnection} 連線字串");
+        _sapdsDatabase = ParseDatabaseName(connStr);
+        _logger.LogDebug("SAPDS 資料庫名稱: {Database}", _sapdsDatabase);
+    }
+
+    /// <summary>
+    /// 從連線字串解析 Initial Catalog（資料庫名稱）
+    /// </summary>
+    private static string ParseDatabaseName(string connectionString)
+    {
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        return builder.InitialCatalog;
     }
 
     /// <inheritdoc />
@@ -170,10 +195,10 @@ public class DataTransformService : IDataTransformService
     /// </summary>
     private async Task<List<(string RequisitionID, string SerialID, string DiagramID)>> FetchAllMastersAsync()
     {
-        const string sql = @"
+        var sql = $@"
             SELECT S.RequisitionID, S.SerialID, S.DiagramID
             FROM [dbo].[FSe7en_Sys_Requisition] S
-            LEFT JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON S.RequisitionID = Q.RequisitionID
+            LEFT JOIN {FullQueueTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE S.Status = 1
               AND S.DiagramID IN ('TWC1D002', 'TWC0D003', 'TWC0D004')
               AND (S.TimeStart >= CONVERT(DATETIME, '2025-12-01 00:00:00', 102))
@@ -215,7 +240,7 @@ public class DataTransformService : IDataTransformService
         FetchOrderDetailsFromQueueAsync()
     {
         // D 明細（只處理 Invoice=2,3 且 RequestType=1,3,4）
-        const string mainSql = @"
+        var mainSql = $@"
             SELECT 
                 S.RequisitionID, S.SerialID, S.TimeLastAction,
                 M.ApplicantID, M.Invoice, M.RequestType, M.CustomerCode, M.CustomerName, 
@@ -225,7 +250,7 @@ public class DataTransformService : IDataTransformService
             FROM [dbo].[FSe7en_Sys_Requisition] S
             INNER JOIN [dbo].[FM7T_TWF1D002_M] M ON S.RequisitionID = M.RequisitionID
             INNER JOIN [dbo].[FM7T_TWF1D002_D] D ON M.RequisitionID = D.RequisitionID
-            INNER JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON S.RequisitionID = Q.RequisitionID
+            INNER JOIN {FullQueueTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE Q.DiagramID = 'TWC1D002' AND Q.ProcessedAt IS NULL
               AND M.Invoice IN (2,3) AND M.RequestType IN (1,3,4)
             ORDER BY S.RequisitionID, D.ItemNo";
@@ -234,11 +259,11 @@ public class DataTransformService : IDataTransformService
             mainSql, null, BpmProConnection)).ToList();
 
         // D2 贈品（需要 JOIN M 表確保條件一致）
-        const string freeGoodsSql = @"
+        var freeGoodsSql = $@"
             SELECT D2.RequisitionID, D2.MaterialCode, D2.FreeMaterialCode, D2.FreeQty, D2.UOM, D2.Purpose, D2.CHILD
             FROM [dbo].[FM7T_TWF1D002_D2] D2
             INNER JOIN [dbo].[FM7T_TWF1D002_M] M ON D2.RequisitionID = M.RequisitionID
-            INNER JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON D2.RequisitionID = Q.RequisitionID
+            INNER JOIN {FullQueueTable} Q ON D2.RequisitionID = Q.RequisitionID
             WHERE Q.DiagramID = 'TWC1D002' AND Q.ProcessedAt IS NULL 
               AND M.Invoice IN (2,3) AND M.RequestType IN (1,3,4)
               AND D2.FreeQty > 0";
@@ -247,7 +272,7 @@ public class DataTransformService : IDataTransformService
             freeGoodsSql, null, BpmProConnection)).ToList();
 
         // D3 加購品（包含 M 表資訊，可獨立處理）
-        const string addOnsSql = @"
+        var addOnsSql = $@"
             SELECT 
                 S.RequisitionID, S.SerialID, S.TimeLastAction,
                 M.ApplicantID, M.Invoice, M.CustomerCode, M.CustomerName, M.CustomerSPCode, M.Remark,
@@ -255,7 +280,7 @@ public class DataTransformService : IDataTransformService
             FROM [dbo].[FSe7en_Sys_Requisition] S
             INNER JOIN [dbo].[FM7T_TWF1D002_M] M ON S.RequisitionID = M.RequisitionID
             INNER JOIN [dbo].[FM7T_TWF1D002_D3] D3 ON M.RequisitionID = D3.RequisitionID
-            INNER JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON S.RequisitionID = Q.RequisitionID
+            INNER JOIN {FullQueueTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE Q.DiagramID = 'TWC1D002' AND Q.ProcessedAt IS NULL 
               AND M.Invoice IN (2,3) AND M.RequestType IN (1,3,4)
               AND D3.AddQty > 0
@@ -272,7 +297,7 @@ public class DataTransformService : IDataTransformService
     /// </summary>
     private async Task<List<SampleBatchItem>> FetchSampleDetailsFromQueueAsync()
     {
-        const string sql = @"
+        var sql = $@"
             SELECT 
                 S.RequisitionID, S.SerialID, S.TimeLastAction,
                 M.ApplicantID, M.Invoice, M.CustomerCode, M.CustomerName, 
@@ -283,7 +308,7 @@ public class DataTransformService : IDataTransformService
             FROM [dbo].[FSe7en_Sys_Requisition] S
             INNER JOIN [dbo].[FM7T_TWF0D003_M] M ON S.RequisitionID = M.RequisitionID
             INNER JOIN [dbo].[FM7T_TWF0D003_D] D ON M.RequisitionID = D.RequisitionID
-            INNER JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON S.RequisitionID = Q.RequisitionID
+            INNER JOIN {FullQueueTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE Q.DiagramID = 'TWC0D003' AND Q.ProcessedAt IS NULL AND M.Invoice IN (2,3)
             ORDER BY S.RequisitionID, D.DNo";
 
@@ -296,15 +321,15 @@ public class DataTransformService : IDataTransformService
     /// </summary>
     private async Task<List<ReturnBatchItem>> FetchReturnDetailsFromQueueAsync()
     {
-        const string sql = @"
+        var sql = $@"
             SELECT 
                 S.RequisitionID, S.SerialID, S.TimeLastAction,
                 M.ApplicantID, M.Invoice, M.CustomerCode, M.CustomerName,
                 (SELECT TOP 1 SPNumber 
-                 FROM (SELECT SPNumber FROM [SAPDS_QAS].[dbo].[Sales_ArichSOMaster] WITH (NOLOCK) 
+                 FROM (SELECT SPNumber FROM [{_sapdsDatabase}].[dbo].[Sales_ArichSOMaster] WITH (NOLOCK) 
                        WHERE SONumber = D.SalesOrderNumber AND SOItem = D.SOItem
                        UNION ALL
-                       SELECT SPNumber FROM [SAPDS_QAS].[dbo].[Sales_ZLSOMaster] WITH (NOLOCK) 
+                       SELECT SPNumber FROM [{_sapdsDatabase}].[dbo].[Sales_ZLSOMaster] WITH (NOLOCK) 
                        WHERE SONumber = D.SalesOrderNumber AND SOItem = D.SOItem) AS SP
                 ) AS SPNumber,
                 M.Remark, M.RequestType,
@@ -315,7 +340,7 @@ public class DataTransformService : IDataTransformService
             FROM [dbo].[FSe7en_Sys_Requisition] S
             INNER JOIN [dbo].[FM7T_TWF0D004_M] M ON S.RequisitionID = M.RequisitionID
             INNER JOIN [dbo].[FM7T_TWF0D004_D] D ON M.RequisitionID = D.RequisitionID
-            INNER JOIN [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify] Q ON S.RequisitionID = Q.RequisitionID
+            INNER JOIN {FullQueueTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE Q.DiagramID = 'TWC0D004' AND Q.ProcessedAt IS NULL AND M.Invoice IN (2,3)
             ORDER BY S.RequisitionID, D.ItemNo";
 
@@ -328,8 +353,8 @@ public class DataTransformService : IDataTransformService
     /// </summary>
     private async Task MarkQueueAsProcessedAsync()
     {
-        const string sql = @"
-            UPDATE [SAPDS_QAS].[dbo].[FourPL_DataTrans_Queue_Verify]
+        var sql = $@"
+            UPDATE {FullQueueTable}
             SET ProcessedAt = GETDATE()
             WHERE ProcessedAt IS NULL";
 
@@ -347,8 +372,8 @@ public class DataTransformService : IDataTransformService
 
         _logger.LogInformation("開始逐筆寫入，共 {Count} 筆", items.Count);
 
-        const string insertSql = @"
-            INSERT INTO [SAPDS_QAS].[dbo].[FourPL_DataTrans_ExportResult_Verify]
+        var insertSql = $@"
+            INSERT INTO {FullExportTable}
             (RequisitionID, FormNo, FormItem, FormRefItem, ApplicantID, SalesOrg, DistributionChannel, Division,
              ReceivingParty, CustomerNumber, CustomerName, SPNumber, ApprovalDate, Remark, ItemCategory,
              PricingType, PricingGroup, MaterialCode, Batch, SalesChannel, Qty, SalesUnit, DebitCreditType,
