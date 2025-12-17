@@ -1,12 +1,20 @@
 namespace FourPLWebAPI.Models;
 
 /// <summary>
-/// Export 主表資訊（共用欄位）
+/// Export 表單資訊
 /// </summary>
-public record ExportMasterInfo(
+public record ExportFormInfo(
     string RequisitionID,
     string FormNo,
-    string ApprovalDate,
+    int ItemNo,
+    string FormRefItem,
+    string ApprovalDate
+);
+
+/// <summary>
+/// Export 客戶資訊
+/// </summary>
+public record ExportCustomerInfo(
     string ApplicantID,
     int Invoice,
     string CustomerCode,
@@ -16,9 +24,9 @@ public record ExportMasterInfo(
 );
 
 /// <summary>
-/// Export 項目資訊（訂單類）
+/// Export 商品資訊
 /// </summary>
-public record ExportOrderItemInfo(
+public record ExportItemInfo(
     string ItemCategory,
     string PricingType,
     string PricingGroup,
@@ -26,31 +34,25 @@ public record ExportOrderItemInfo(
     string Batch,
     decimal Qty,
     string SalesUnit,
-    string DebitCreditType,
+    string DebitCreditType
+);
+
+/// <summary>
+/// Export 價格資訊
+/// </summary>
+public record ExportPriceInfo(
     decimal InvoicePriceWithTax,
     decimal InvoicePrice,
     decimal TotalInvoicePriceWithTax,
     decimal TotalInvoicePrice,
     decimal FixedPriceWithTax,
-    string PricingUnit,
-    string ItemPurpose,
-    string ReturnCode
+    string PricingUnit
 );
 
 /// <summary>
-/// Export 項目資訊（退貨類）
+/// Export 退貨/原單資訊
 /// </summary>
-public record ExportReturnItemInfo(
-    string ItemCategory,
-    string MaterialCode,
-    string Batch,
-    decimal Qty,
-    string SalesUnit,
-    string DebitCreditType,
-    decimal InvoicePriceWithTax,
-    decimal InvoicePrice,
-    decimal TotalInvoicePriceWithTax,
-    decimal TotalInvoicePrice,
+public record ExportReturnInfo(
     string ItemPurpose,
     string ReturnCode,
     string SalesDate,
@@ -58,13 +60,6 @@ public record ExportReturnItemInfo(
     string OriginSOItem,
     string InvoiceNumber,
     string InvoiceDate,
-    string CreditNote
-);
-
-/// <summary>
-/// Export 格式化資訊
-/// </summary>
-public record ExportFormInfo(
-    int ItemNo,
-    string FormRefItem
+    string CreditNote,
+    string CostCenter
 );
