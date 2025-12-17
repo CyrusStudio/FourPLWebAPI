@@ -149,8 +149,9 @@ public static class BatchItemExtensions
                creditNote, "");
 
     /// <summary>
-    /// 格式化表單項次為 6 位數字串
+    /// 格式化表單項次為 6 位數字串（原始 SQL 邏輯：n → n*10 格式化）
+    /// 例如：1 → "000010", 2 → "000020", 10 → "000100"
     /// </summary>
     private static string FormatFormItem(int itemNo)
-        => itemNo.ToString("D6");
+        => (itemNo * 10).ToString("D6");
 }

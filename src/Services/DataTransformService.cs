@@ -447,11 +447,11 @@ public class DataTransformService : IDataTransformService
                 var first = group.First();
                 var formNo = GetFormNo(first.SerialID);
                 var approvalDate = first.TimeLastAction.ToString("yyyyMMdd");
-                var itemSerialNo = 1;
+                var itemSerialNo = 1;  // 依照原始 SQL：@ItemSerialNo = 1
 
                 foreach (var detail in group.OrderBy(x => x.ItemNo))
                 {
-                    var refItem = detail.ItemNo;  // 使用原始項次（如 10、20、30）
+                    var refItem = itemSerialNo;  // 依照原始 SQL：@RefItem = @ItemSerialNo
 
                     // ZTW1
                     exports.Add(CreateBatchOrderExport(detail, formNo, itemSerialNo++, refItem, approvalDate, "ZTW1", "D"));
