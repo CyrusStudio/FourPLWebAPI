@@ -33,6 +33,11 @@ public class DataTransformService : IDataTransformService
     private string FullExportTable => $"[{_sapdsDatabase}].{ExportTableName}";
     private string FullQueueTable => $"[{_sapdsDatabase}].{QueueTableName}";
 
+    // Export DTO 共用常數（減少重複程式碼）
+    private static readonly ExportPriceInfo ZeroPrice = new(PricingUnit: "1000");
+    private static readonly ExportReturnInfo EmptyReturn = new();
+    private static readonly ExportReturnInfo SampleCostCenter = new(CostCenter: "TW02_72100");
+
     public DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger, IConfiguration configuration)
     {
         _sqlHelper = sqlHelper;
@@ -486,6 +491,7 @@ public class DataTransformService : IDataTransformService
                 var requisitionId = group.Key;
                 var first = group.First();
                 var formNo = GetFormNo(first.SerialID);
+                var approvalDate = first.TimeLastAction.ToString("yyyyMMdd");
 
                 // 如果 D 表有此 RequisitionID，繼續使用那邊的 itemSerialNo
                 // 如果沒有，從 1 開始（獨立處理）
@@ -494,7 +500,7 @@ public class DataTransformService : IDataTransformService
                 foreach (var addOn in group.OrderBy(x => x.ItemNo))
                 {
                     // 使用獨立方法，直接使用 addOn 自身的 M 表欄位
-                    exports.Add(CreateAddOnExportIndependent(addOn, formNo, itemSerialNo++));
+                    exports.Add(CreateAddOnExportIndependent(addOn, formNo, itemSerialNo++, approvalDate));
                 }
             }
             catch (Exception ex)
@@ -506,27 +512,7 @@ public class DataTransformService : IDataTransformService
         return (exports, errors);
     }
 
-    /// <summary>
-    /// 轉換樣品批次資料為 Export 格式
-    /// </summary>
-    // ZTW6: 樣品
-    private List<DataTransExport> TransformSampleBatchItems(List<SampleBatchItem> items)
-    {
-        return items.Select(i =>
-        {
-            var remark = !string.IsNullOrEmpty(i.FundingSource)
-                ? $"{i.Remark ?? ""}(掛帳{i.FundingSource})"
-                : i.Remark ?? "";
 
-            return CreateExportBase(
-                new ExportFormInfo(i.RequisitionID, GetFormNo(i.SerialID), i.DNo, "", i.TimeLastAction.ToString("yyyyMMdd")),
-                new ExportCustomerInfo(i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
-                    i.CustomerSPCode ?? "", remark),
-                new ExportItemInfo("ZTW6", "", "", i.MaterialCode, "", i.Qty, i.UOM, "D"),
-                new ExportPriceInfo(0, 0, 0, 0, 0, ""),
-                new ExportReturnInfo(i.Purpose ?? "", "", "", "", "", "", "", "", "TW02_72100"));
-        }).ToList();
-    }
 
     /// <summary>
     /// 轉換退貨批次資料為 Export 格式
@@ -639,151 +625,138 @@ public class DataTransformService : IDataTransformService
 
     // ZTW1: 訂單銷貨
     private DataTransExport CreateBatchOrderExport(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate, string category, string debitCredit)
-    {
-        var isOldPrice = i.RequestType == 1 || i.RequestType == 4;
-        var invoicePrice = isOldPrice ? i.OldInvoicePriceWithTax : i.NewInvoicePriceWithTax;
-        var fixedPrice = isOldPrice ? i.OldSalePriceWithTax : i.NewSalePriceWithTax;
-
-        return CreateExportBase(
-            new ExportFormInfo(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate),
-            new ExportCustomerInfo(i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
-                i.CustomerSPCode.OrEmpty(), i.Remark.OrEmpty()),
-            new ExportItemInfo(category, i.QuotationType.OrEmpty(),
-                i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup.OrEmpty(),
-                i.MaterialCode, "", i.Qty, i.UOM, debitCredit),
-            new ExportPriceInfo(invoicePrice * 1000, invoicePrice / 1.05m * 1000,
-                invoicePrice * i.Qty, invoicePrice / 1.05m * i.Qty, fixedPrice * 1000, "1000"),
-            new ExportReturnInfo(i.Purpose.OrEmpty(), "", "", "", "", "", "", "", ""));
-    }
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo(category, debitCredit),
+            i.ToPriceInfo(),
+            EmptyReturn with { ItemPurpose = i.Purpose.OrEmpty() });
 
     private bool ShouldCreateBatchZTW2(OrderBatchItem item)
-    {
-        var isOldPrice = item.RequestType == 1 || item.RequestType == 4;
-        var invoicePrice = isOldPrice ? item.OldInvoicePriceWithTax : item.NewInvoicePriceWithTax;
-        var fixedPrice = isOldPrice ? item.OldSalePriceWithTax : item.NewSalePriceWithTax;
-        return invoicePrice != fixedPrice;
-    }
+        => item.ToDiscountPriceInfo().Price != null;
 
     // ZTW2: 銷貨折讓
     private DataTransExport? CreateBatchOrderZTW2(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
     {
-        var isOldPrice = i.RequestType == 1 || i.RequestType == 4;
-        var invoicePrice = isOldPrice ? i.OldInvoicePriceWithTax : i.NewInvoicePriceWithTax;
-        var salePrice = isOldPrice ? i.OldSalePriceWithTax : i.NewSalePriceWithTax;
-        var priceDiff = (invoicePrice - salePrice) * i.Qty;
-        if (priceDiff == 0) return null;
+        var (discountPrice, _) = i.ToDiscountPriceInfo();
+        if (discountPrice == null) return null;
 
         return CreateExportBase(
-            new ExportFormInfo(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate),
-            new ExportCustomerInfo(i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
-                i.CustomerSPCode.OrEmpty(), i.Remark.OrEmpty()),
-            new ExportItemInfo("ZTW2", i.QuotationType.OrEmpty(),
-                i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup.OrEmpty(),
-                i.MaterialCode, "", i.Qty, i.UOM, "C"),
-            new ExportPriceInfo(0, 0, priceDiff, priceDiff / 1.05m, 0, "1000"),
-            new ExportReturnInfo(i.Purpose.OrEmpty(), "201", "", "", "", "", "", "", ""));
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW2", "C"),
+            discountPrice,
+            EmptyReturn with { ItemPurpose = i.Purpose.OrEmpty(), ReturnCode = "201" });
     }
 
     // ZTW5: 贈品
     private DataTransExport CreateBatchFreeGoodsExport(OrderBatchItem m, OrderFreeGoodsBatchItem fg, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(
-            new ExportFormInfo(m.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate),
-            new ExportCustomerInfo(m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName,
-                m.CustomerSPCode.OrEmpty(), m.Remark.OrEmpty()),
-            new ExportItemInfo("ZTW5", m.QuotationType.OrEmpty(),
-                m.QuotationType == "1" ? m.CustomerCode : m.PriceGroup.OrEmpty(),
-                fg.FreeMaterialCode, "", fg.FreeQty, fg.UOM, "D"),
-            new ExportPriceInfo(0, 0, 0, 0, 0, "1000"),
-            new ExportReturnInfo(fg.Purpose.OrEmpty(), "", "", "", "", "", "", "", ""));
+            m.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            m.ToCustomerInfo(),
+            fg.ToItemInfo(m),
+            ZeroPrice,
+            EmptyReturn with { ItemPurpose = fg.Purpose.OrEmpty() });
 
-    // ZTW5: 加購品（依賴 D 表時使用）
-    private DataTransExport CreateBatchAddOnExport(OrderBatchItem m, OrderAddOnBatchItem addOn, string formNo, int itemNo, string approvalDate)
-        => CreateExportBase(
-            new ExportFormInfo(m.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), approvalDate),
-            new ExportCustomerInfo(m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName,
-                m.CustomerSPCode.OrEmpty(), m.Remark.OrEmpty()),
-            new ExportItemInfo("ZTW5", "", "", addOn.MaterialCode, "", addOn.AddQty, addOn.UOM, "D"),
-            new ExportPriceInfo(0, 0, 0, 0, 0, "1000"),
-            new ExportReturnInfo(addOn.Purpose.OrEmpty(), "", "", "", "", "", "", "", ""));
 
     // ZTW5: 加購品（獨立處理，使用自身的 M 表欄位）
-    private DataTransExport CreateAddOnExportIndependent(OrderAddOnBatchItem addOn, string formNo, int itemNo)
+    private DataTransExport CreateAddOnExportIndependent(OrderAddOnBatchItem addOn, string formNo, int itemNo, string approvalDate)
         => CreateExportBase(
-            new ExportFormInfo(addOn.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), addOn.TimeLastAction.ToString("yyyyMMdd")),
-            new ExportCustomerInfo(addOn.ApplicantID, addOn.Invoice, addOn.CustomerCode, addOn.CustomerName,
-                addOn.CustomerSPCode.OrEmpty(), addOn.Remark.OrEmpty()),
-            new ExportItemInfo("ZTW5", "", "", addOn.MaterialCode, "", addOn.AddQty, addOn.UOM, "D"),
-            new ExportPriceInfo(0, 0, 0, 0, 0, "1000"),
-            new ExportReturnInfo(addOn.Purpose.OrEmpty(), "", "", "", "", "", "", "", ""));
+            addOn.ToFormInfo(formNo, itemNo, approvalDate),
+            addOn.ToCustomerInfo(),
+            addOn.ToItemInfo(),
+            ZeroPrice,
+            EmptyReturn with { ItemPurpose = addOn.Purpose.OrEmpty() });
 
     /// <summary>
-    /// 建立 Return Export（統一方法）
+    /// 轉換樣品批次資料為 Export 格式
     /// </summary>
-    private DataTransExport CreateReturnExport(
-        ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate,
-        string itemCategory, string debitCreditType,
-        decimal qty, string batch,
-        decimal invoicePriceWithTax, decimal totalPriceWithTax,
-        string returnCode, string creditNote, bool includeInvoice)
+    // ZTW6: 樣品
+    private List<DataTransExport> TransformSampleBatchItems(List<SampleBatchItem> items)
     {
-        return CreateExportBase(
-            new ExportFormInfo(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate),
-            new ExportCustomerInfo(i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
-                i.SPNumber.OrEmpty(), i.Remark.OrEmpty()),
-            new ExportItemInfo(itemCategory, "", "", i.MaterialCode, batch, qty, i.UOM, debitCreditType),
-            new ExportPriceInfo(invoicePriceWithTax * 1000, invoicePriceWithTax / 1.05m * 1000,
-                totalPriceWithTax, totalPriceWithTax / 1.05m, 0, "1000"),
-            new ExportReturnInfo(i.Notes.OrEmpty(), returnCode,
-                i.SalesDate.OrEmpty(), i.SalesOrderNumber.OrEmpty(), i.SOItem.OrEmpty(),
-                includeInvoice ? i.InvoiceNumber.OrEmpty() : "",
-                includeInvoice ? i.InvoiceDate.OrEmpty() : "",
-                creditNote, ""));
+        // 按 RequisitionID 分組，用第一筆的 TimeLastAction 作為 approvalDate
+        var grouped = items.GroupBy(x => x.RequisitionID);
+        var exports = new List<DataTransExport>();
+
+        foreach (var group in grouped)
+        {
+            var first = group.First();
+            var formNo = GetFormNo(first.SerialID);
+            var approvalDate = first.TimeLastAction.ToString("yyyyMMdd");
+
+            foreach (var i in group)
+            {
+                var remark = !string.IsNullOrEmpty(i.FundingSource)
+                    ? $"{i.Remark ?? ""}(掛帳{i.FundingSource})"
+                    : i.Remark ?? "";
+
+                exports.Add(CreateExportBase(
+                    i.ToFormInfo(formNo, approvalDate),
+                    i.ToCustomerInfo(remark),
+                    i.ToItemInfo(),
+                    ZeroPrice,
+                    SampleCostCenter with { ItemPurpose = i.Purpose ?? "" }));
+            }
+        }
+        return exports;
     }
 
     // ZTW4: 銷貨退回
     private DataTransExport CreateReturnType1Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
-        => CreateReturnExport(i, formNo, itemNo, itemNo, approvalDate,
-            "ZTW4", "C", i.Qty, i.Batch.OrEmpty(),
-            i.OldUnitPriceInTax, i.TotalUnitPriceInTax,
-            i.ReturnCode.OrEmpty(), "", true);
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, itemNo, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW4", "C", i.Qty, i.Batch.OrEmpty()),
+            i.ToPriceInfo(i.OldUnitPriceInTax, i.TotalUnitPriceInTax),
+            i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW7: 退貨入庫
     private DataTransExport CreateReturnType2ExportZTW7(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
-            "ZTW7", "C", i.Qty, i.Batch.OrEmpty(),
-            0, 0,
-            i.ReturnCode.OrEmpty(), "", true);
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW7", "C", i.Qty, i.Batch.OrEmpty()),
+            ZeroPrice,
+            i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW8: 換貨出庫
     private DataTransExport CreateReturnType2ExportZTW8(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
-            "ZTW8", "D", i.ExchangeOut, "",
-            0, 0,
-            i.ReturnCode.OrEmpty(), "", true);
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW8", "D", i.ExchangeOut),
+            ZeroPrice,
+            i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW3: 退貨折讓（使用舊價格）
     private DataTransExport CreateReturnType3ExportZTW3(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
     {
         var unitPrice = i.Qty > 0 ? i.TotalUnitPriceInTax / i.Qty * i.ExchangeOut : 0;
-        return CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
-            "ZTW3", "C", i.ExchangeOut, "",
-            i.OldUnitPriceInTax, unitPrice,
-            i.ReturnCode.OrEmpty(), i.DiscountOrderNumber.OrEmpty(), true);
+        return CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW3", "C", i.ExchangeOut),
+            i.ToPriceInfo(i.OldUnitPriceInTax, unitPrice),
+            i.ToReturnInfo(i.ReturnCode.OrEmpty(), i.DiscountOrderNumber.OrEmpty()));
     }
 
     // ZTWB: 換貨重開（使用新價格）
     private DataTransExport CreateReturnType3ExportZTWB(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
-            "ZTWB", "D", i.ExchangeOut, "",
-            i.NewUnitPriceInTax, i.NewTotalUnitPriceInTax,
-            i.ReturnCode.OrEmpty(), "", false);
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTWB", "D", i.ExchangeOut),
+            i.ToPriceInfo(i.NewUnitPriceInTax, i.NewTotalUnitPriceInTax),
+            i.ToReturnInfo(i.ReturnCode.OrEmpty(), includeInvoice: false));
 
     // Type4: 銷貨折讓
     private DataTransExport CreateReturnType4Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
-        => CreateReturnExport(i, formNo, itemNo, itemNo, approvalDate,
-            "ZTW3", "C", i.Qty, "",
-            0, i.NewTotalUnitPriceInTax,
-            "200", "", true);
+        => CreateExportBase(
+            i.ToFormInfo(formNo, itemNo, itemNo, approvalDate),
+            i.ToCustomerInfo(),
+            i.ToItemInfo("ZTW3", "C", i.Qty),
+            i.ToPriceInfo(0, i.NewTotalUnitPriceInTax),
+            i.ToReturnInfo("200"));
 
     #endregion
 

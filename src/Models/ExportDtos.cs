@@ -24,7 +24,7 @@ public record ExportCustomerInfo(
 );
 
 /// <summary>
-/// Export 商品資訊
+/// Export 商品資訊（保持原參數順序）
 /// </summary>
 public record ExportItemInfo(
     string ItemCategory,
@@ -41,25 +41,25 @@ public record ExportItemInfo(
 /// Export 價格資訊
 /// </summary>
 public record ExportPriceInfo(
-    decimal InvoicePriceWithTax,
-    decimal InvoicePrice,
-    decimal TotalInvoicePriceWithTax,
-    decimal TotalInvoicePrice,
-    decimal FixedPriceWithTax,
-    string PricingUnit
+    decimal InvoicePriceWithTax = 0,
+    decimal InvoicePrice = 0,
+    decimal TotalInvoicePriceWithTax = 0,
+    decimal TotalInvoicePrice = 0,
+    decimal FixedPriceWithTax = 0,
+    string PricingUnit = "1000"
 );
 
 /// <summary>
 /// Export 退貨/原單資訊
 /// </summary>
 public record ExportReturnInfo(
-    string ItemPurpose,
-    string ReturnCode,
-    string SalesDate,
-    string OriginSONumber,
-    string OriginSOItem,
-    string InvoiceNumber,
-    string InvoiceDate,
-    string CreditNote,
-    string CostCenter
+    string ItemPurpose = "",
+    string ReturnCode = "",
+    string SalesDate = "",
+    string OriginSONumber = "",
+    string OriginSOItem = "",
+    string InvoiceNumber = "",
+    string InvoiceDate = "",
+    string CreditNote = "",
+    string CostCenter = ""
 );
