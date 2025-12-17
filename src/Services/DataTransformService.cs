@@ -2,6 +2,7 @@ using Dapper;
 using Microsoft.Data.SqlClient;
 using FourPLWebAPI.Infrastructure;
 using FourPLWebAPI.Models;
+using FourPLWebAPI.Extensions;
 
 namespace FourPLWebAPI.Services;
 
@@ -528,12 +529,14 @@ public class DataTransformService : IDataTransformService
         var fixedPrice = isOldPrice ? i.OldSalePriceWithTax : i.NewSalePriceWithTax;
 
         return CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.CustomerSPCode ?? "", i.Remark ?? "",
-            category, i.QuotationType ?? "", i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup ?? "",
+            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
+            i.CustomerSPCode.OrEmpty(), i.Remark.OrEmpty(),
+            category, i.QuotationType.OrEmpty(),
+            i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup.OrEmpty(),
             i.MaterialCode, "", i.Qty, i.UOM, debitCredit,
             invoicePrice * 1000, invoicePrice / 1.05m * 1000,
             invoicePrice * i.Qty, invoicePrice / 1.05m * i.Qty, fixedPrice * 1000,
-            "1000", i.Purpose ?? "", "",
+            "1000", i.Purpose.OrEmpty(), "",
             "", "", "", "", "", "", "");
     }
 
@@ -541,17 +544,9 @@ public class DataTransformService : IDataTransformService
     {
         // 根據 RequestType 決定用舊價或新價
         // RequestType = 1 或 4 用舊價，否則用新價
-        decimal invoicePrice, fixedPrice;
-        if (item.RequestType == 1 || item.RequestType == 4)
-        {
-            invoicePrice = item.OldInvoicePriceWithTax;
-            fixedPrice = item.OldSalePriceWithTax;
-        }
-        else
-        {
-            invoicePrice = item.NewInvoicePriceWithTax;
-            fixedPrice = item.NewSalePriceWithTax;
-        }
+        var isOldPrice = item.RequestType == 1 || item.RequestType == 4;
+        var invoicePrice = isOldPrice ? item.OldInvoicePriceWithTax : item.NewInvoicePriceWithTax;
+        var fixedPrice = isOldPrice ? item.OldSalePriceWithTax : item.NewSalePriceWithTax;
         // 當發票價 != 固定價時產生 ZTW2
         return invoicePrice != fixedPrice;
     }
@@ -566,105 +561,116 @@ public class DataTransformService : IDataTransformService
         if (priceDiff == 0) return null;
 
         return CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.CustomerSPCode ?? "", i.Remark ?? "",
-            "ZTW2", i.QuotationType ?? "", i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup ?? "",
+            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
+            i.CustomerSPCode.OrEmpty(), i.Remark.OrEmpty(),
+            "ZTW2", i.QuotationType.OrEmpty(),
+            i.QuotationType == "1" ? i.CustomerCode : i.PriceGroup.OrEmpty(),
             i.MaterialCode, "", i.Qty, i.UOM, "C",
             0, 0, priceDiff, priceDiff / 1.05m, 0,
-            "1000", i.Purpose ?? "", "201",
+            "1000", i.Purpose.OrEmpty(), "201",
             "", "", "", "", "", "", "");
     }
 
     // ZTW5: 贈品
     private DataTransExport CreateBatchFreeGoodsExport(OrderBatchItem m, OrderFreeGoodsBatchItem fg, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(m.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName, m.CustomerSPCode ?? "", m.Remark ?? "",
-            "ZTW5", m.QuotationType ?? "", m.QuotationType == "1" ? m.CustomerCode : m.PriceGroup ?? "",
+            m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName,
+            m.CustomerSPCode.OrEmpty(), m.Remark.OrEmpty(),
+            "ZTW5", m.QuotationType.OrEmpty(),
+            m.QuotationType == "1" ? m.CustomerCode : m.PriceGroup.OrEmpty(),
             fg.FreeMaterialCode, "", fg.FreeQty, fg.UOM, "D",
             0, 0, 0, 0, 0,
-            "1000", fg.Purpose ?? "", "",
+            "1000", fg.Purpose.OrEmpty(), "",
             "", "", "", "", "", "", "");
 
     // ZTW5: 加購品（依賴 D 表時使用）
     private DataTransExport CreateBatchAddOnExport(OrderBatchItem m, OrderAddOnBatchItem addOn, string formNo, int itemNo, string approvalDate)
         => CreateExportBase(m.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), approvalDate,
-            m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName, m.CustomerSPCode ?? "", m.Remark ?? "",
+            m.ApplicantID, m.Invoice, m.CustomerCode, m.CustomerName,
+            m.CustomerSPCode.OrEmpty(), m.Remark.OrEmpty(),
             "ZTW5", "", "", addOn.MaterialCode, "", addOn.AddQty, addOn.UOM, "D",
             0, 0, 0, 0, 0,
-            "1000", addOn.Purpose ?? "", "",
+            "1000", addOn.Purpose.OrEmpty(), "",
             "", "", "", "", "", "", "");
 
     // ZTW5: 加購品（獨立處理，使用自身的 M 表欄位）
     private DataTransExport CreateAddOnExportIndependent(OrderAddOnBatchItem addOn, string formNo, int itemNo)
         => CreateExportBase(addOn.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), addOn.TimeLastAction.ToString("yyyyMMdd"),
-            addOn.ApplicantID, addOn.Invoice, addOn.CustomerCode, addOn.CustomerName, addOn.CustomerSPCode ?? "", addOn.Remark ?? "",
+            addOn.ApplicantID, addOn.Invoice, addOn.CustomerCode, addOn.CustomerName,
+            addOn.CustomerSPCode.OrEmpty(), addOn.Remark.OrEmpty(),
             "ZTW5", "", "", addOn.MaterialCode, "", addOn.AddQty, addOn.UOM, "D",
             0, 0, 0, 0, 0,
-            "1000", addOn.Purpose ?? "", "",
+            "1000", addOn.Purpose.OrEmpty(), "",
             "", "", "", "", "", "", "");
+
+    /// <summary>
+    /// 建立 Return Export（統一方法）
+    /// </summary>
+    private DataTransExport CreateReturnExport(
+        ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate,
+        string itemCategory, string debitCreditType,
+        decimal qty, string batch,
+        decimal invoicePriceWithTax, decimal totalPriceWithTax,
+        string returnCode, string creditNote, bool includeInvoice)
+    {
+        return CreateExportBase(
+            i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
+            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName,
+            i.SPNumber.OrEmpty(), i.Remark.OrEmpty(),
+            itemCategory, "", "", i.MaterialCode, batch, qty, i.UOM, debitCreditType,
+            invoicePriceWithTax * 1000, invoicePriceWithTax / 1.05m * 1000,
+            totalPriceWithTax, totalPriceWithTax / 1.05m, 0,
+            "1000", i.Notes.OrEmpty(), returnCode,
+            i.SalesDate.OrEmpty(), i.SalesOrderNumber.OrEmpty(), i.SOItem.OrEmpty(),
+            includeInvoice ? i.InvoiceNumber.OrEmpty() : "",
+            includeInvoice ? i.InvoiceDate.OrEmpty() : "",
+            creditNote, "");
+    }
 
     // ZTW4: 銷貨退回
     private DataTransExport CreateReturnType1Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTW4", "", "", i.MaterialCode, i.Batch ?? "", i.Qty, i.UOM, "C",
-            i.OldUnitPriceInTax * 1000, i.OldUnitPriceInTax / 1.05m * 1000,
-            i.TotalUnitPriceInTax, i.TotalUnitPriceInTax / 1.05m, 0,
-            "1000", i.Notes ?? "", i.ReturnCode ?? "",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            i.InvoiceNumber ?? "", i.InvoiceDate ?? "", "", "");
+        => CreateReturnExport(i, formNo, itemNo, itemNo, approvalDate,
+            "ZTW4", "C", i.Qty, i.Batch.OrEmpty(),
+            i.OldUnitPriceInTax, i.TotalUnitPriceInTax,
+            i.ReturnCode.OrEmpty(), "", true);
 
     // ZTW7: 退貨入庫
     private DataTransExport CreateReturnType2ExportZTW7(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTW7", "", "", i.MaterialCode, i.Batch ?? "", i.Qty, i.UOM, "C",
-            0, 0, 0, 0, 0,
-            "1000", i.Notes ?? "", i.ReturnCode ?? "",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            i.InvoiceNumber ?? "", i.InvoiceDate ?? "", "", "");
+        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
+            "ZTW7", "C", i.Qty, i.Batch.OrEmpty(),
+            0, 0,
+            i.ReturnCode.OrEmpty(), "", true);
 
     // ZTW8: 換貨出庫
     private DataTransExport CreateReturnType2ExportZTW8(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTW8", "", "", i.MaterialCode, "", i.ExchangeOut, i.UOM, "D",
-            0, 0, 0, 0, 0,
-            "1000", i.Notes ?? "", i.ReturnCode ?? "",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            i.InvoiceNumber ?? "", i.InvoiceDate ?? "", "", "");
+        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
+            "ZTW8", "D", i.ExchangeOut, "",
+            0, 0,
+            i.ReturnCode.OrEmpty(), "", true);
 
     // ZTW3: 退貨折讓（使用舊價格）
     private DataTransExport CreateReturnType3ExportZTW3(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTW3", "", "", i.MaterialCode, "", i.ExchangeOut, i.UOM, "C",
-            i.OldUnitPriceInTax * 1000, i.OldUnitPriceInTax / 1.05m * 1000,
-            i.Qty > 0 ? i.TotalUnitPriceInTax / i.Qty * i.ExchangeOut : 0,
-            i.Qty > 0 ? i.TotalUnitPriceInTax / i.Qty * i.ExchangeOut / 1.05m : 0, 0,
-            "1000", i.Notes ?? "", i.ReturnCode ?? "",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            i.InvoiceNumber ?? "", i.InvoiceDate ?? "", i.DiscountOrderNumber ?? "", "");
+    {
+        var unitPrice = i.Qty > 0 ? i.TotalUnitPriceInTax / i.Qty * i.ExchangeOut : 0;
+        return CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
+            "ZTW3", "C", i.ExchangeOut, "",
+            i.OldUnitPriceInTax, unitPrice,
+            i.ReturnCode.OrEmpty(), i.DiscountOrderNumber.OrEmpty(), true);
+    }
 
     // ZTWB: 換貨重開（使用新價格）
     private DataTransExport CreateReturnType3ExportZTWB(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(refItem), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTWB", "", "", i.MaterialCode, "", i.ExchangeOut, i.UOM, "D",
-            i.NewUnitPriceInTax * 1000, i.NewUnitPriceInTax / 1.05m * 1000,
-            i.NewTotalUnitPriceInTax, i.NewTotalUnitPriceInTax / 1.05m, 0,
-            "1000", i.Notes ?? "", i.ReturnCode ?? "",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            "", "", "", "");
+        => CreateReturnExport(i, formNo, itemNo, refItem, approvalDate,
+            "ZTWB", "D", i.ExchangeOut, "",
+            i.NewUnitPriceInTax, i.NewTotalUnitPriceInTax,
+            i.ReturnCode.OrEmpty(), "", false);
 
     // Type4: 銷貨折讓
     private DataTransExport CreateReturnType4Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
-        => CreateExportBase(i.RequisitionID, formNo, itemNo, FormatFormItem(itemNo), approvalDate,
-            i.ApplicantID, i.Invoice, i.CustomerCode, i.CustomerName, i.SPNumber ?? "", i.Remark ?? "",
-            "ZTW3", "", "", i.MaterialCode, "", i.Qty, i.UOM, "C",
-            0, 0, i.NewTotalUnitPriceInTax, i.NewTotalUnitPriceInTax / 1.05m, 0,
-            "1000", i.Notes ?? "", "200",
-            i.SalesDate ?? "", i.SalesOrderNumber ?? "", i.SOItem ?? "",
-            i.InvoiceNumber ?? "", i.InvoiceDate ?? "", "", "");
+        => CreateReturnExport(i, formNo, itemNo, itemNo, approvalDate,
+            "ZTW3", "C", i.Qty, "",
+            0, i.NewTotalUnitPriceInTax,
+            "200", "", true);
 
     #endregion
 
