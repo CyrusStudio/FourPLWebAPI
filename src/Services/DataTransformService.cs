@@ -35,13 +35,13 @@ public class DataTransformService : IDataTransformService
         var effectiveStartDate = startDate ?? new DateTime(2025, 11, 1);
         _logger.LogInformation("批次處理待處理資料，起始日期: {StartDate}", effectiveStartDate);
 
+        var result = new DataTransformResult { Success = true };
+        var allExportItems = new List<DataTransExport>();
+        var errors = new List<string>();
+
+        // ===== Step 1: 將新資料加入 Queue =====
         try
         {
-            var result = new DataTransformResult { Success = true };
-            var allExportItems = new List<DataTransExport>();
-            var errors = new List<string>();
-
-            // ===== Step 1: 將新資料加入 Queue =====
             var newMasters = await FetchAllMastersAsync();
             if (newMasters.Count > 0)
             {
@@ -52,68 +52,114 @@ public class DataTransformService : IDataTransformService
             {
                 _logger.LogInformation("沒有新資料需要加入 Queue");
             }
-
-            // ===== Step 2: 處理 Queue 中待處理的記錄（ProcessedAt IS NULL）=====
-            // 處理訂單 (TWC1D002)
-            var (orderItems, freeGoods, addOns) = await FetchOrderDetailsFromQueueAsync();
-            if (orderItems.Count > 0 || addOns.Count > 0)
-            {
-                _logger.LogInformation("訂單明細：{Count} 筆, 贈品：{FreeCount} 筆, 加購：{AddOnCount} 筆",
-                    orderItems.Count, freeGoods.Count, addOns.Count);
-                var (exports, orderErrors) = TransformOrderBatchItems(orderItems, freeGoods, addOns);
-                allExportItems.AddRange(exports);
-                errors.AddRange(orderErrors);
-            }
-
-            // 處理樣品 (TWC0D003)
-            var sampleItems = await FetchSampleDetailsFromQueueAsync();
-            if (sampleItems.Count > 0)
-            {
-                _logger.LogInformation("樣品明細：{Count} 筆", sampleItems.Count);
-                var exports = TransformSampleBatchItems(sampleItems);
-                allExportItems.AddRange(exports);
-            }
-
-            // 處理退貨 (TWC0D004)
-            var returnItems = await FetchReturnDetailsFromQueueAsync();
-            if (returnItems.Count > 0)
-            {
-                _logger.LogInformation("退貨明細：{Count} 筆", returnItems.Count);
-                var exports = TransformReturnBatchItems(returnItems);
-                allExportItems.AddRange(exports);
-            }
-
-            // ===== Step 3: 批次寫入 Export =====
-            if (allExportItems.Count > 0)
-            {
-                _logger.LogInformation("開始批次寫入，共 {Count} 筆 Export 項目", allExportItems.Count);
-                var insertCount = await _sqlHelper.BulkInsertAsync(ExportVerifyTable, allExportItems);
-                result.ProcessedCount = insertCount;
-                _logger.LogInformation("批次寫入完成，共 {Count} 筆", insertCount);
-
-                // Step 4: 更新 Queue ProcessedAt
-                await MarkQueueAsProcessedAsync();
-            }
-            else
-            {
-                _logger.LogInformation("沒有待處理的 Export 資料");
-            }
-
-
-            result.Errors = errors;
-            result.Message = $"處理完成，共 {result.ProcessedCount} 筆成功，{errors.Count} 筆錯誤";
-            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "批次處理失敗");
-            return new DataTransformResult
-            {
-                Success = false,
-                Message = $"批次處理失敗: {ex.Message}",
-                Errors = new List<string> { ex.Message }
-            };
+            _logger.LogError(ex, "Step 1 失敗：新增資料到 Queue 時發生錯誤");
+            errors.Add($"[Queue] 新增資料失敗: {ex.Message}");
         }
+
+        // ===== Step 2: 處理 TWC1D002 訂單（獨立處理）=====
+        try
+        {
+            var (orderItems, freeGoods, addOns) = await FetchOrderDetailsFromQueueAsync();
+            if (orderItems.Count > 0 || addOns.Count > 0)
+            {
+                _logger.LogInformation("[TWC1D002] 訂單明細：{Count} 筆, 贈品：{FreeCount} 筆, 加購：{AddOnCount} 筆",
+                    orderItems.Count, freeGoods.Count, addOns.Count);
+                var (exports, orderErrors) = TransformOrderBatchItems(orderItems, freeGoods, addOns);
+                allExportItems.AddRange(exports);
+                foreach (var err in orderErrors)
+                {
+                    _logger.LogWarning("[TWC1D002] 轉換錯誤: {Error}", err);
+                    errors.Add($"[TWC1D002] {err}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[TWC1D002] 訂單處理失敗");
+            errors.Add($"[TWC1D002] 訂單處理失敗: {ex.Message}");
+        }
+
+        // ===== Step 3: 處理 TWC0D003 樣品（獨立處理）=====
+        try
+        {
+            var sampleItems = await FetchSampleDetailsFromQueueAsync();
+            if (sampleItems.Count > 0)
+            {
+                _logger.LogInformation("[TWC0D003] 樣品明細：{Count} 筆", sampleItems.Count);
+                var exports = TransformSampleBatchItems(sampleItems);
+                allExportItems.AddRange(exports);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[TWC0D003] 樣品處理失敗");
+            errors.Add($"[TWC0D003] 樣品處理失敗: {ex.Message}");
+        }
+
+        // ===== Step 4: 處理 TWC0D004 退貨（獨立處理）=====
+        try
+        {
+            var returnItems = await FetchReturnDetailsFromQueueAsync();
+            if (returnItems.Count > 0)
+            {
+                _logger.LogInformation("[TWC0D004] 退貨明細：{Count} 筆", returnItems.Count);
+                var exports = TransformReturnBatchItems(returnItems);
+                allExportItems.AddRange(exports);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[TWC0D004] 退貨處理失敗");
+            errors.Add($"[TWC0D004] 退貨處理失敗: {ex.Message}");
+        }
+
+        // ===== Step 5: 批次寫入 Export =====
+        if (allExportItems.Count > 0)
+        {
+            _logger.LogInformation("開始批次寫入，共 {Count} 筆 Export 項目", allExportItems.Count);
+
+            try
+            {
+                // 嘗試 BulkInsert
+                var insertCount = await _sqlHelper.BulkInsertAsync(ExportVerifyTable, allExportItems);
+                result.ProcessedCount = insertCount;
+                _logger.LogInformation("批次寫入成功，共 {Count} 筆", insertCount);
+            }
+            catch (Exception bulkEx)
+            {
+                // BulkInsert 失敗，降級為逐筆寫入
+                _logger.LogWarning(bulkEx, "BulkInsert 失敗，降級為逐筆寫入以追蹤錯誤");
+                var (successCount, insertErrors) = await InsertExportsRowByRowAsync(allExportItems);
+                result.ProcessedCount = successCount;
+                errors.AddRange(insertErrors);
+            }
+
+            // Step 6: 更新 Queue ProcessedAt（只有成功的會被標記）
+            if (result.ProcessedCount > 0)
+            {
+                await MarkQueueAsProcessedAsync();
+            }
+        }
+        else
+        {
+            _logger.LogInformation("沒有待處理的 Export 資料");
+        }
+
+        result.Errors = errors;
+        result.Success = errors.Count == 0;
+        result.Message = errors.Count == 0
+            ? $"處理完成，共 {result.ProcessedCount} 筆成功"
+            : $"處理完成，共 {result.ProcessedCount} 筆成功，{errors.Count} 個錯誤";
+
+        if (errors.Count > 0)
+        {
+            _logger.LogWarning("處理完成但有錯誤，共 {ErrorCount} 個錯誤", errors.Count);
+        }
+
+        return result;
     }
 
 
@@ -289,6 +335,53 @@ public class DataTransformService : IDataTransformService
 
         var affected = await _sqlHelper.ExecuteAsync(sql, null);
         _logger.LogInformation("已標記 {Count} 筆 Queue 為已處理", affected);
+    }
+
+    /// <summary>
+    /// 逐筆寫入 Export（用於 BulkInsert 失敗時的降級處理）
+    /// </summary>
+    private async Task<(int SuccessCount, List<string> Errors)> InsertExportsRowByRowAsync(List<DataTransExport> items)
+    {
+        var errors = new List<string>();
+        var successCount = 0;
+
+        _logger.LogInformation("開始逐筆寫入，共 {Count} 筆", items.Count);
+
+        const string insertSql = @"
+            INSERT INTO [SAPDS_QAS].[dbo].[FourPL_DataTrans_ExportResult_Verify]
+            (RequisitionID, FormNo, FormItem, FormRefItem, ApplicantID, SalesOrg, DistributionChannel, Division,
+             ReceivingParty, CustomerNumber, CustomerName, SPNumber, ApprovalDate, Remark, ItemCategory,
+             PricingType, PricingGroup, MaterialCode, Batch, SalesChannel, Qty, SalesUnit, DebitCreditType,
+             Currency, InvoicePriceWithTax, InvoicePrice, TotalInvoicePriceWithTax, TotalInvoicePrice,
+             FixedPriceWithTax, PricingUnit, ItemPurpose, ReturnCode, SalesDate, OriginSONumber, OriginSOItem,
+             NewSONumber, NewSOItem, InvoiceNumber, InvoiceDate, CreditNote, ValidityPeriod, Sloc, CostCenter,
+             ExportStatus, CreatedAt)
+            VALUES
+            (@RequisitionID, @FormNo, @FormItem, @FormRefItem, @ApplicantID, @SalesOrg, @DistributionChannel, @Division,
+             @ReceivingParty, @CustomerNumber, @CustomerName, @SPNumber, @ApprovalDate, @Remark, @ItemCategory,
+             @PricingType, @PricingGroup, @MaterialCode, @Batch, @SalesChannel, @Qty, @SalesUnit, @DebitCreditType,
+             @Currency, @InvoicePriceWithTax, @InvoicePrice, @TotalInvoicePriceWithTax, @TotalInvoicePrice,
+             @FixedPriceWithTax, @PricingUnit, @ItemPurpose, @ReturnCode, @SalesDate, @OriginSONumber, @OriginSOItem,
+             @NewSONumber, @NewSOItem, @InvoiceNumber, @InvoiceDate, @CreditNote, @ValidityPeriod, @Sloc, @CostCenter,
+             @ExportStatus, @CreatedAt)";
+
+        foreach (var item in items)
+        {
+            try
+            {
+                await _sqlHelper.ExecuteAsync(insertSql, item);
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"RequisitionID={item.RequisitionID}, FormNo={item.FormNo}, FormItem={item.FormItem}, Category={item.ItemCategory}: {ex.Message}";
+                _logger.LogError(ex, "[Export 寫入失敗] {Error}", errorMsg);
+                errors.Add($"[Export] {errorMsg}");
+            }
+        }
+
+        _logger.LogInformation("逐筆寫入完成，成功 {Success} 筆，失敗 {Failed} 筆", successCount, errors.Count);
+        return (successCount, errors);
     }
 
     #endregion
