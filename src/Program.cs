@@ -1,11 +1,17 @@
 using System.Reflection;
-using FourPLWebAPI.Infrastructure;
+using FourPLWebAPI.Infrastructure.Abstractions;
+using FourPLWebAPI.Infrastructure.SAP;
+using FourPLWebAPI.Infrastructure.Persistence;
+using FourPLWebAPI.Infrastructure.Messaging;
+using FourPLWebAPI.Infrastructure.Files;
 using FourPLWebAPI.Infrastructure.Scheduling;
-using FourPLWebAPI.Services;
+using FourPLWebAPI.Services.Abstractions;
+using FourPLWebAPI.Services.Implementations;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FourPLWebAPI;
 
@@ -17,6 +23,8 @@ public class Program
     /// <summary>
     /// 主程式進入點
     /// </summary>
+    private static readonly string[] HangfireQueues = ["default", "critical"];
+
     public static void Main(string[] args)
     {
         // 設定 Serilog
@@ -50,16 +58,39 @@ public class Program
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new OpenApiInfo
+                // 1. 外部整合 API
+                options.SwaggerDoc("external", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = "FourPL Web API",
-                    Description = "SAP 整合中間件 API - 供 Power Automate 呼叫的整合服務，支援 Hangfire 背景排程",
-                    Contact = new OpenApiContact
+                    Title = "FourPL Web API - 外部整合",
+                    Description = "供 Power Automate 或外部系統呼叫的整合服務",
+                    Contact = new OpenApiContact { Name = "FourPL Team", Email = "support@fourpl.com" }
+                });
+
+                // 2. 內部管理 API
+                options.SwaggerDoc("internal", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "FourPL Web API - 內部管理",
+                    Description = "供排程或系統內部管理使用的 API",
+                    Contact = new OpenApiContact { Name = "FourPL Team", Email = "support@fourpl.com" }
+                });
+
+                // 根據 Namespace 自動過濾 API 歸類
+                options.DocInclusionPredicate((docName, apiDesc) =>
+                {
+                    if (!apiDesc.TryGetMethodInfo(out var methodInfo)) return false;
+
+                    var ns = methodInfo.DeclaringType?.Namespace ?? "";
+                    if (docName == "external")
                     {
-                        Name = "FourPL Team",
-                        Email = "support@fourpl.com"
+                        return ns.Contains(".Controllers.External");
                     }
+                    if (docName == "internal")
+                    {
+                        return ns.Contains(".Controllers.Internal");
+                    }
+                    return true;
                 });
 
                 // 載入 XML 註解
@@ -103,9 +134,9 @@ public class Program
             builder.Services.AddScoped<IDataTransformService, DataTransformService>();
 
             // 註冊 Job 服務
-            builder.Services.AddScoped<FourPLWebAPI.Jobs.JobExecutor>();
-            builder.Services.AddScoped<FourPLWebAPI.Jobs.SOSyncJob>();
-            builder.Services.AddScoped<FourPLWebAPI.Jobs.SapFileProcessJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Infrastructure.JobExecutor>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SOSyncJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SapFileProcessJob>();
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
@@ -132,7 +163,7 @@ public class Program
                 {
                     options.ServerName = $"FourPL-{Environment.MachineName}";
                     options.WorkerCount = Environment.ProcessorCount * 2;
-                    options.Queues = new[] { "default", "critical" };
+                    options.Queues = HangfireQueues;
                 });
 
                 // 註冊排程同步服務
@@ -153,7 +184,8 @@ public class Program
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "FourPL Web API v1");
+                    options.SwaggerEndpoint("/swagger/external/swagger.json", "外部整合 API");
+                    options.SwaggerEndpoint("/swagger/internal/swagger.json", "內部管理 API");
                     options.RoutePrefix = "swagger";
                 });
             }
@@ -178,10 +210,8 @@ public class Program
 
                 app.UseHangfireDashboard(dashboardPath, new DashboardOptions
                 {
-                    // 開發環境允許匿名存取，正式環境應設定授權
-                    Authorization = app.Environment.IsDevelopment()
-                        ? new[] { new HangfireAuthorizationFilter() }
-                        : new[] { new HangfireAuthorizationFilter() },
+                    Authorization = [], // 簡化為空集合
+                    IgnoreAntiforgeryToken = true,
                     DashboardTitle = "FourPL - 排程管理"
                 });
 

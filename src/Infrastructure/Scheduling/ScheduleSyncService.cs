@@ -163,7 +163,7 @@ public class ScheduleSyncService : IHostedService, IDisposable
             var isDevelopment = environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
 
             // 使用 Hangfire 註冊排程，呼叫 JobExecutor 執行 Job
-            RecurringJob.AddOrUpdate<FourPLWebAPI.Jobs.JobExecutor>(
+            RecurringJob.AddOrUpdate<FourPLWebAPI.Jobs.Infrastructure.JobExecutor>(
                 config.JobId,
                 executor => executor.ExecuteAsync(config.JobType),
                 config.CronExpression,

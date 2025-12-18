@@ -1,4 +1,4 @@
-using FourPLWebAPI.Infrastructure;
+using FourPLWebAPI.Infrastructure.SAP;
 
 namespace FourPLWebAPI.Models;
 

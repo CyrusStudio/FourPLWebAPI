@@ -171,8 +171,8 @@ public class DataTransformResult
     public int ProcessedCount { get; set; }
 
     /// <summary>處理的 RequisitionID 清單</summary>
-    public List<string> RequisitionIds { get; set; } = new();
+    public List<string> RequisitionIds { get; set; } = [];
 
     /// <summary>錯誤清單</summary>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 }

@@ -134,7 +134,7 @@ public static class BatchItemExtensions
     /// <summary>
     /// 從 ReturnBatchItem 建立 ExportPriceInfo
     /// </summary>
-    public static ExportPriceInfo ToPriceInfo(this ReturnBatchItem i, decimal invoicePriceWithTax, decimal totalPriceWithTax)
+    public static ExportPriceInfo ToPriceInfo(this ReturnBatchItem _, decimal invoicePriceWithTax, decimal totalPriceWithTax)
         => new(invoicePriceWithTax * 1000, invoicePriceWithTax / 1.05m * 1000,
                totalPriceWithTax, totalPriceWithTax / 1.05m, 0, "1000");
 

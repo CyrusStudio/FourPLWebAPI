@@ -14,24 +14,6 @@ public class SOSyncRequest
 }
 
 /// <summary>
-/// SO 主檔查詢請求 (舊版，保留向下相容)
-/// </summary>
-public class SOQueryRequest
-{
-    /// <summary>
-    /// 業務模組 (例如 "AR" 或其他值)
-    /// AR: ORDLA IN ('A', 'L') -> Sales_ArichSOMaster
-    /// 其他: ORDLA IN ('Z', 'B') -> Sales_ZLSOMaster
-    /// </summary>
-    public string Vm { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 查詢起始日 (YYYYMMDD) - 預設為昨天
-    /// </summary>
-    public string? StartDate { get; set; }
-}
-
-/// <summary>
 /// SO 主檔資料 DTO
 /// 對應 SAP Table ZT4PL_BILLING 轉換後的欄位
 /// </summary>
@@ -167,7 +149,7 @@ public class SOSyncResult
     /// <summary>
     /// 同步的資料列表
     /// </summary>
-    public List<SOMasterData> Data { get; set; } = new();
+    public List<SOMasterData> Data { get; set; } = [];
 }
 
 /// <summary>
@@ -198,6 +180,6 @@ public class SOSyncAllResult
     /// <summary>
     /// 各表同步結果
     /// </summary>
-    public List<SOSyncResult> Results { get; set; } = new();
+    public List<SOSyncResult> Results { get; set; } = [];
 }
 

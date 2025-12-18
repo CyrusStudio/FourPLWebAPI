@@ -30,7 +30,6 @@ public class OrderBatchItem
     public string UOM { get; set; } = string.Empty;
     public string? Purpose { get; set; }
     public string? PriceType { get; set; }
-    public string? PARENT { get; set; }
     public decimal OldInvoicePriceWithTax { get; set; }
     public decimal OldSalePriceWithTax { get; set; }
     public decimal NewInvoicePriceWithTax { get; set; }
@@ -48,7 +47,6 @@ public class OrderFreeGoodsBatchItem
     public decimal FreeQty { get; set; }
     public string UOM { get; set; } = string.Empty;
     public string? Purpose { get; set; }
-    public string? CHILD { get; set; }
 }
 
 /// <summary>
