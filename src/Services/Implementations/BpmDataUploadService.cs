@@ -38,6 +38,41 @@ public class BpmDataUploadService(
     private static readonly ExportReturnInfo SampleCostCenter = new(CostCenter: "TW02_72100");
 
     /// <inheritdoc />
+    public async Task<BpmUploadExecutionResult> ExecuteFullUploadProcessAsync()
+    {
+        var result = new BpmUploadExecutionResult { Success = true };
+        _logger.LogInformation("開始執行完整 BPM 資料上傳流程");
+
+        // 1. 轉換 (BPM -> Staging)
+        result.TransformResult = await ProcessPendingAsync();
+        if (!result.TransformResult.Success)
+        {
+            _logger.LogWarning("資料轉換過程有錯誤，但繼續執行後續流程");
+        }
+
+        // 2. 生成 XML
+        var (xmlFiles, generateSuccess) = await GenerateExportXmlAsync();
+        result.Success = generateSuccess;
+        result.XmlMessages.Add($"生成 XML 檔案共 {xmlFiles.Count} 個");
+
+        // 3. 上傳
+        if (xmlFiles.Count > 0)
+        {
+            _logger.LogInformation("開始執行檔案上傳流程");
+            result.UploadResults.Add(await _dataExchangeService.UploadToSapAsync());
+            result.UploadResults.Add(await _dataExchangeService.UploadToZLAsync());
+            result.UploadResults.Add(await _dataExchangeService.UploadToARICHAsync());
+        }
+        else
+        {
+            _logger.LogInformation("無檔案需要上傳");
+        }
+
+        _logger.LogInformation("完整上傳流程執行完成, Success: {Success}", result.Success);
+        return result;
+    }
+
+    /// <inheritdoc />
     public async Task<DataTransformResult> ProcessPendingAsync()
     {
         _logger.LogInformation("批次處理待處理資料");
@@ -169,40 +204,6 @@ public class BpmDataUploadService(
         return result;
     }
 
-    /// <inheritdoc />
-    public async Task<BpmUploadExecutionResult> ExecuteFullUploadProcessAsync()
-    {
-        var result = new BpmUploadExecutionResult { Success = true };
-        _logger.LogInformation("開始執行完整 BPM 資料上傳流程");
-
-        // 1. 轉換 (BPM -> Staging)
-        result.TransformResult = await ProcessPendingAsync();
-        if (!result.TransformResult.Success)
-        {
-            _logger.LogWarning("資料轉換過程有錯誤，但繼續執行後續流程");
-        }
-
-        // 2. 生成 XML
-        var (xmlFiles, generateSuccess) = await GenerateExportXmlAsync();
-        result.Success = generateSuccess;
-        result.XmlMessages.Add($"生成 XML 檔案共 {xmlFiles.Count} 個");
-
-        // 3. 上傳
-        if (xmlFiles.Count > 0)
-        {
-            _logger.LogInformation("開始執行檔案上傳流程");
-            result.UploadResults.Add(await _dataExchangeService.UploadToSapAsync());
-            result.UploadResults.Add(await _dataExchangeService.UploadToZLAsync());
-            result.UploadResults.Add(await _dataExchangeService.UploadToARICHAsync());
-        }
-        else
-        {
-            _logger.LogInformation("無檔案需要上傳");
-        }
-
-        _logger.LogInformation("完整上傳流程執行完成, Success: {Success}", result.Success);
-        return result;
-    }
 
     /// <summary>
     /// 從 Export_Verify 表生成 XML 檔案 (區分為 ToSAP, ToARICH, ToZL)
@@ -265,12 +266,13 @@ public class BpmDataUploadService(
     }
 
     /// <summary>
-    /// 為特定場景產生 XML
+    /// 為特定場景產生 XML (合併單一檔案)
     /// </summary>
     private async Task<(List<string> Files, bool Success)> GenerateXmlForScenarioAsync(string scenario, string sql, string targetPath)
     {
-        _logger.LogInformation("執行場景 {Scenario} XML 產生", scenario);
+        _logger.LogInformation("執行場景 {Scenario} XML 產生 (合併模式)", scenario);
         var producedFiles = new List<string>();
+        var startTime = DateTime.Now;
 
         try
         {
@@ -283,31 +285,25 @@ public class BpmDataUploadService(
                 return (producedFiles, true);
             }
 
-            // 按 FormNo 分組產生 XML (假設一個表單一個檔案，或視需求決定)
-            // 這裡依據 RequisitionID 可能更好，但 SQL 中只有 FormNo
-            var groupedData = list.GroupBy(x => (string)x.FormNo);
+            // 檔名格式: BPM_{處理開始時間}_{實際存檔時間}.xml
+            // 例如: BPM_20251218110005_20251218110010
+            var fileName = $"BPM_{startTime:yyyyMMddHHmmss}_{DateTime.Now:yyyyMMddHHmmss}.xml";
+            var fullPath = Path.Combine(targetPath, fileName);
 
-            foreach (var group in groupedData)
-            {
-                var formNo = group.Key;
-                var fileName = $"BPM_Export_{scenario}_{formNo}_{DateTime.Now:yyyyMMddHHmmss}.xml";
-                var fullPath = Path.Combine(targetPath, fileName);
+            if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
 
-                if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
+            var doc = new XDocument(
+                new XDeclaration("1.0", "utf-8", "yes"),
+                new XElement("root",
+                    list.Select(row => new XElement("BPMDataTrans",
+                        ((IDictionary<string, object>)row).Select(pair => new XElement(pair.Key, pair.Value))
+                    ))
+                )
+            );
 
-                var doc = new XDocument(
-                    new XDeclaration("1.0", "utf-8", "yes"),
-                    new XElement("Records",
-                        group.Select(row => new XElement("Record",
-                            ((IDictionary<string, object>)row).Select(pair => new XElement(pair.Key, pair.Value))
-                        ))
-                    )
-                );
-
-                doc.Save(fullPath);
-                producedFiles.Add(fileName);
-                _logger.LogInformation("場景 {Scenario}: 已產生 XML {FileName}", scenario, fileName);
-            }
+            doc.Save(fullPath);
+            producedFiles.Add(fileName);
+            _logger.LogInformation("場景 {Scenario}: 已產生合併 XML {FileName}，共 {Count} 筆資料", scenario, fileName, list.Count);
 
             return (producedFiles, true);
         }
@@ -343,8 +339,7 @@ public class BpmDataUploadService(
             LEFT JOIN {QueueVerifyTable} Q ON S.RequisitionID = Q.RequisitionID
             WHERE S.Status = 1
               AND S.DiagramID IN ('TWC1D002', 'TWC0D003', 'TWC0D004')
-              AND (S.TimeStart >= CONVERT(DATETIME, '2025-12-01 00:00:00', 102))
-              AND (S.TimeLastAction < CONVERT(DATETIME, '2025-12-17 00:00:00', 102))
+              AND (S.TimeLastAction >= CONVERT(DATETIME, '2025-12-18 15:00:00', 102))
               AND Q.RequisitionID IS NULL";
 
         return [.. await _sqlHelper.QueryWithConnectionAsync<(string RequisitionID, string SerialID, string DiagramID)>(

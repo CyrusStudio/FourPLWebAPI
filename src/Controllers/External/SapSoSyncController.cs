@@ -36,7 +36,7 @@ public class SapSoSyncController(ISapSoSyncService soSyncService, ILogger<SapSoS
     ///     {}
     /// 
     /// </remarks>
-    [HttpPost("so-sync")]
+    [HttpPost("execute")]
     [ProducesResponseType(typeof(SOSyncAllResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<SOSyncAllResult>> SyncSOMaster(

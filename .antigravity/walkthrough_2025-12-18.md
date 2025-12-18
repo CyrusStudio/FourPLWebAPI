@@ -74,6 +74,13 @@
 - **別名映射 (Alias Mapping)**：在 `JobExecutor` 中實施了靜態映射，能自動將舊的 `SOSyncJob` 導向新的 `SapSoSyncJob`。
 - **彈性方法調用**：同步支援 `Execute` 與 `ExecuteAsync` 方法名稱，確保不同時期的 Job 都能被正確觸發。
 
+## 11. BPM XML 生成邏輯優化
+
+- **合併多單為一檔**：重構 `GenerateXmlForScenarioAsync` 移除按單號 (FormNo) 分組的邏輯。同一場景（ToSAP, ToARICH, ToZL）的所有待處理單據現在會全數合併至單一 XML 中。
+- **節點名稱對齊**：根據範例文件，根節點已統一為 `<root>`，每筆紀錄節點統一為 `<BPMDataTrans>`。
+- **特定命名規格**：採用 `BPM_{yyyyMMddHHmmss}_{yyyyMMddHHmmss}.xml` 格式。前一個時間戳記為處理啟動時間，後一個為實際存檔時間。
+- **完整流水線**：`ExecuteFullUploadProcessAsync` 確保了「資料載入 (BPM -> Staging)」->「合併生成 XML」->「檔案上傳」的正確執行順序。
+
 ## 3. 拼字一致性驗證
 
 - 已清查全案文字，確認資料表與變數命名皆統一為 `Verify`（修正了潛在的 `Vertify` 拼字錯誤）。
