@@ -16,7 +16,7 @@ public class SapSoSyncController(ISapSoSyncService soSyncService, ILogger<SapSoS
     private readonly ILogger<SapSoSyncController> _logger = logger;
 
     /// <summary>
-    /// 同步 SO 主檔資料至 SQL Server (自動處理兩個表)
+    /// 從 SAP RFC ZT4PL_BILLING 查詢資料，自動同步 (自動處理兩個表)
     /// </summary>
     /// <remarks>
     /// 從 SAP RFC ZT4PL_BILLING 查詢資料，自動同步至以下兩個資料表：

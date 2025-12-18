@@ -66,7 +66,7 @@ public class NetworkDiskHelper : INetworkDiskHelper
         _logger = logger;
 
         // 從設定檔讀取網路磁碟設定
-        var section = configuration.GetSection("DataExchange:NetworkDisk");
+        var section = configuration.GetSection("NetworkDisk");
         var remotePathStr = section["RemotePaths"] ?? "";
         var localDriveStr = section["LocalDrives"] ?? "";
 

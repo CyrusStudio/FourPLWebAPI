@@ -5,6 +5,7 @@ using FourPLWebAPI.Infrastructure.Abstractions;
 using FourPLWebAPI.Models;
 using FourPLWebAPI.Extensions;
 using FourPLWebAPI.Services.Abstractions;
+using System.Xml.Linq;
 
 namespace FourPLWebAPI.Services.Implementations;
 
@@ -14,10 +15,12 @@ namespace FourPLWebAPI.Services.Implementations;
 /// </summary>
 public class BpmDataUploadService(
     ISqlHelper sqlHelper,
+    IConfiguration configuration,
     IDataExchangeService dataExchangeService,
     ILogger<BpmDataUploadService> logger) : IBpmDataUploadService
 {
     private readonly ISqlHelper _sqlHelper = sqlHelper;
+    private readonly IConfiguration _configuration = configuration;
     private readonly IDataExchangeService _dataExchangeService = dataExchangeService;
     private readonly ILogger<BpmDataUploadService> _logger = logger;
 
@@ -202,51 +205,128 @@ public class BpmDataUploadService(
     }
 
     /// <summary>
-    /// 從 Export_Verify 表生成 XML 檔案
+    /// 從 Export_Verify 表生成 XML 檔案 (區分為 ToSAP, ToARICH, ToZL)
     /// </summary>
     private async Task<(List<string> Files, bool Success)> GenerateExportXmlAsync()
     {
-        _logger.LogInformation("從 {Table} 生成 XML 檔案", ExportVerifyTable);
+        _logger.LogInformation("開始執行 XML 產生流程 (ToSAP, ToARICH, ToZL)");
         var files = new List<string>();
-        var success = true;
+        var overallSuccess = true;
+
+        // 1. ToSAP (全量)
+        var (sapFiles, sapSuccess) = await GenerateXmlForScenarioAsync(
+            "ToSAP",
+            $@"SELECT FormNo, FormItem, FormRefItem, ApplicantID, SalesOrg, DistributionChannel, Division, ReceivingParty, 
+                      CustomerNumber, CustomerName, SPNumber, ApprovalDate, Remark, ItemCategory, PricingType, PricingGroup, MaterialCode, Batch, SalesChannel, Qty, 
+                      SalesUnit, DebitCreditType, Currency, InvoicePriceWithTax, InvoicePrice, TotalInvoicePriceWithTax, TotalInvoicePrice, FixedPriceWithTax, PricingUnit, 
+                      ItemPurpose, ReturnCode, SalesDate, OriginSONumber, OriginSOItem, NewSONumber, NewSOItem, InvoiceNumber, InvoiceDate, CreditNote, 
+                      ValidityPeriod, Sloc, CostCenter 
+               FROM [{ExportVerifyTable}] 
+               WHERE ExportedAt IS NULL",
+            _configuration["BpmDataUpload:LocalSourcePath"] ?? @"C:\4PLMasterDataTrans\Target\SAP\");
+        files.AddRange(sapFiles);
+        if (!sapSuccess) overallSuccess = false;
+
+        // 2. ToARICH ( ReceivingParty = 'L' )
+        var (arichFiles, arichSuccess) = await GenerateXmlForScenarioAsync(
+            "ToARICH",
+            $@"SELECT FormNo, FormItem, FormRefItem, ApplicantID, SalesOrg, DistributionChannel, Division, ReceivingParty, 
+                      CustomerNumber, CustomerName, SPNumber, ApprovalDate, Remark, ItemCategory, PricingType, PricingGroup, MaterialCode, Batch, SalesChannel, Qty, 
+                      SalesUnit, DebitCreditType, Currency, InvoicePriceWithTax, InvoicePrice, TotalInvoicePriceWithTax, TotalInvoicePrice, FixedPriceWithTax, PricingUnit, 
+                      ItemPurpose, ReturnCode, SalesDate, OriginSONumber, OriginSOItem, NewSONumber, NewSOItem, InvoiceNumber, InvoiceDate, CreditNote, 
+                      ValidityPeriod, Sloc 
+               FROM [{ExportVerifyTable}] 
+               WHERE ExportedAt IS NULL AND ReceivingParty = 'L'",
+            _configuration["BpmDataUpload:SftpTargets:ARICH:LocalSource"] ?? @"C:\4PLMasterDataTrans\Target\ARICH\");
+        files.AddRange(arichFiles);
+        if (!arichSuccess) overallSuccess = false;
+
+        // 3. ToZL ( ReceivingParty = 'B' )
+        var (zlFiles, zlSuccess) = await GenerateXmlForScenarioAsync(
+            "ToZL",
+            $@"SELECT FormNo, FormItem, FormRefItem, ApplicantID, SalesOrg, DistributionChannel, Division, ReceivingParty, 
+                      CustomerNumber, CustomerName, SPNumber, ApprovalDate, Remark, ItemCategory, PricingType, PricingGroup, MaterialCode, Batch, SalesChannel, Qty, 
+                      SalesUnit, DebitCreditType, Currency, InvoicePriceWithTax, InvoicePrice, TotalInvoicePriceWithTax, TotalInvoicePrice, FixedPriceWithTax, PricingUnit, 
+                      ItemPurpose, ReturnCode, SalesDate, OriginSONumber, OriginSOItem, NewSONumber, NewSOItem, InvoiceNumber, InvoiceDate, CreditNote, 
+                      ValidityPeriod, Sloc 
+               FROM [{ExportVerifyTable}] 
+               WHERE ExportedAt IS NULL AND ReceivingParty = 'B'",
+            _configuration["BpmDataUpload:SftpTargets:ZL:LocalSource"] ?? @"C:\4PLMasterDataTrans\Target\ZUELLIG\");
+        files.AddRange(zlFiles);
+        if (!zlSuccess) overallSuccess = false;
+
+        // 4. 標記為已匯出 (ExportedAt)
+        if (overallSuccess && files.Count > 0)
+        {
+            await MarkAsExportedAsync();
+        }
+
+        return (files, overallSuccess);
+    }
+
+    /// <summary>
+    /// 為特定場景產生 XML
+    /// </summary>
+    private async Task<(List<string> Files, bool Success)> GenerateXmlForScenarioAsync(string scenario, string sql, string targetPath)
+    {
+        _logger.LogInformation("執行場景 {Scenario} XML 產生", scenario);
+        var producedFiles = new List<string>();
 
         try
         {
-            // 查詢狀態為 0 (待生成) 的 RequisitionID
-            const string sql = "SELECT DISTINCT RequisitionID FROM FourPL_DataTrans_Export_Verify WHERE ExportStatus = 0";
-            var reqIds = await _sqlHelper.QueryWithConnectionAsync<string>(sql, null, SapdsConnection);
+            var data = await _sqlHelper.QueryWithConnectionAsync<dynamic>(sql, null, SapdsConnection);
+            var list = data.ToList();
 
-            foreach (var reqId in reqIds)
+            if (list.Count == 0)
             {
-                try
-                {
-                    // 此處應實作 XML 生成邏輯 (基於 Schema)
-                    // 目前採簡化邏輯：抓取資料並透過 DataContract 序列化
-                    _logger.LogDebug("處理 RequisitionID: {ReqId}", reqId);
-
-                    // TODO: 實作具體的 XML 生成與儲存到 DataExchange 的 SourcePath
-                    // 暫時模擬生成
-                    files.Add($"Xml_Generated_{reqId}.xml");
-
-                    // 更新狀態為 1 (已生成)
-                    await _sqlHelper.ExecuteAsync(
-                        "UPDATE FourPL_DataTrans_Export_Verify SET ExportStatus = 1 WHERE RequisitionID = @ReqId",
-                        new { ReqId = reqId });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "生成 RequisitionID {ReqId} 的 XML 失敗", reqId);
-                    success = false;
-                }
+                _logger.LogInformation("場景 {Scenario} 無待處理資料", scenario);
+                return (producedFiles, true);
             }
+
+            // 按 FormNo 分組產生 XML (假設一個表單一個檔案，或視需求決定)
+            // 這裡依據 RequisitionID 可能更好，但 SQL 中只有 FormNo
+            var groupedData = list.GroupBy(x => (string)x.FormNo);
+
+            foreach (var group in groupedData)
+            {
+                var formNo = group.Key;
+                var fileName = $"BPM_Export_{scenario}_{formNo}_{DateTime.Now:yyyyMMddHHmmss}.xml";
+                var fullPath = Path.Combine(targetPath, fileName);
+
+                if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
+
+                var doc = new XDocument(
+                    new XDeclaration("1.0", "utf-8", "yes"),
+                    new XElement("Records",
+                        group.Select(row => new XElement("Record",
+                            ((IDictionary<string, object>)row).Select(pair => new XElement(pair.Key, pair.Value))
+                        ))
+                    )
+                );
+
+                doc.Save(fullPath);
+                producedFiles.Add(fileName);
+                _logger.LogInformation("場景 {Scenario}: 已產生 XML {FileName}", scenario, fileName);
+            }
+
+            return (producedFiles, true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "生成 XML 流程發生錯誤");
-            success = false;
+            _logger.LogError(ex, "場景 {Scenario} XML 產生失敗", scenario);
+            return (producedFiles, false);
         }
+    }
 
-        return (files, success);
+    /// <summary>
+    /// 標記資料為已匯出
+    /// </summary>
+    private async Task MarkAsExportedAsync()
+    {
+        _logger.LogInformation("標記 Export_Verify 資料為已匯出");
+        const string sql = "UPDATE FourPL_DataTrans_Export_Verify SET ExportedAt = GETDATE(), ExportStatus = 1 WHERE ExportedAt IS NULL";
+        var affected = await _sqlHelper.ExecuteAsync(sql, null);
+        _logger.LogInformation("已標記 {Count} 筆資料為已匯出", affected);
     }
 
 

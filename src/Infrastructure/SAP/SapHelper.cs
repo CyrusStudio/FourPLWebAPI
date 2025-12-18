@@ -25,11 +25,11 @@ public class SapHelper : ISapHelper
 
         // 取得目標環境 (DEV/QAS/PRD)
         var sapEnv = configuration.GetValue<string>("SapEnvironment") ?? "DEV";
-        var sapSection = configuration.GetSection($"Sap:{sapEnv}");
+        var sapSection = configuration.GetSection($"SapRFC:{sapEnv}");
 
         if (!sapSection.Exists())
         {
-            sapSection = configuration.GetSection("Sap");
+            sapSection = configuration.GetSection("SapRFC");
         }
 
         _logger.LogInformation("SAP Helper 初始化 - 環境: {Env}, Host: {Host}, SID: {Sid}",

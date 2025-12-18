@@ -15,7 +15,7 @@ public class SftpConnectionFactory(IConfiguration configuration, ILogger<SftpCon
     /// <inheritdoc />
     public SftpClient CreateConnection(string configKey)
     {
-        var section = _configuration.GetSection($"DataExchange:SftpTargets:{configKey}");
+        var section = _configuration.GetSection($"BpmDataUpload:SftpTargets:{configKey}");
 
         var host = section["Host"] ?? throw new InvalidOperationException($"未設定 SFTP Host: {configKey}");
         var port = int.TryParse(section["Port"], out var p) ? p : 22;

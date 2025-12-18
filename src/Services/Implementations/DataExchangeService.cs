@@ -19,14 +19,14 @@ public class DataExchangeService(
     private readonly ISftpConnectionFactory _sftpFactory = sftpFactory;
 
     // 設定區段
-    private readonly IConfigurationSection _localToSapSection = configuration.GetSection("DataExchange:LocalToSap");
-    private readonly IConfigurationSection _zlSection = configuration.GetSection("DataExchange:SftpTargets:ZL");
-    private readonly IConfigurationSection _arichSection = configuration.GetSection("DataExchange:SftpTargets:ARICH");
-    private readonly IConfigurationSection _runModeSection = configuration.GetSection("DataExchange:RunMode");
+    private readonly IConfigurationSection _bpmUploadSection = configuration.GetSection("BpmDataUpload");
+    private readonly IConfigurationSection _zlSection = configuration.GetSection("BpmDataUpload:SftpTargets:ZL");
+    private readonly IConfigurationSection _arichSection = configuration.GetSection("BpmDataUpload:SftpTargets:ARICH");
+    private readonly IConfigurationSection _safetySection = configuration.GetSection("SafetySystem");
 
-    private bool IsProdMode => _runModeSection.GetValue<bool>("IsProd", false);
+    private bool IsProdMode => _safetySection.GetValue<bool>("IsProdMode", false);
     private bool IsSafeMode => !IsProdMode;
-    private string SafeOutputPath => _runModeSection["SafeOutputPath"] ?? @"C:\Lotus\SafeOutput\";
+    private string SafeOutputPath => _safetySection["SafeOutputPath"] ?? @"C:\Lotus\SafeOutput\";
 
 
     #region 場景二：BPM → SAP (上傳)
@@ -47,9 +47,9 @@ public class DataExchangeService(
             // 連接網路磁碟
             await _networkDiskHelper.ConnectAllAsync();
 
-            var sourcePath = _localToSapSection["SourcePath"] ?? "";
-            var targetPath = _localToSapSection["TargetPath"] ?? "";
-            var backupPath = _localToSapSection["BackupPath"] ?? "";
+            var sourcePath = _bpmUploadSection["LocalSourcePath"] ?? "";
+            var targetPath = _bpmUploadSection["SapTargetPath"] ?? "";
+            var backupPath = _bpmUploadSection["BackupPath"] ?? "";
 
             if (!Directory.Exists(sourcePath))
             {
@@ -162,8 +162,8 @@ public class DataExchangeService(
         {
             _logger.LogInformation("=== 開始執行: {ScenarioName} ===", result.ScenarioName);
 
-            var sourcePath = section["SourcePath"] ?? "";
-            var targetPath = section["TargetPath"] ?? "";
+            var sourcePath = section["LocalSource"] ?? "";
+            var targetPath = section["RemoteTarget"] ?? "";
             var backupPath = section["BackupPath"] ?? "";
 
             if (!Directory.Exists(sourcePath))

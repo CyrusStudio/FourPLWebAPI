@@ -25,13 +25,13 @@ public class SapDestinationConfig(IConfiguration configuration) : IDestinationCo
             // 取得目標環境 (DEV/QAS/PRD)
             var sapEnv = configuration.GetValue<string>("SapEnvironment") ?? "DEV";
 
-            // 從 Sap:{環境} 區段讀取設定
-            var sapSection = configuration.GetSection($"Sap:{sapEnv}");
+            // 從 SapRFC:{環境} 區段讀取設定
+            var sapSection = configuration.GetSection($"SapRFC:{sapEnv}");
 
             // 若找不到該環境設定，嘗試使用舊格式 (直接從 Sap 讀取)
             if (!sapSection.Exists())
             {
-                sapSection = configuration.GetSection("Sap");
+                sapSection = configuration.GetSection("SapRFC");
             }
 
             parameters[RfcConfigParameters.AppServerHost] = sapSection["AppServerHost"];

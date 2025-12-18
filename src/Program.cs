@@ -2,7 +2,6 @@ using System.Reflection;
 using FourPLWebAPI.Infrastructure.Abstractions;
 using FourPLWebAPI.Infrastructure.SAP;
 using FourPLWebAPI.Infrastructure.Persistence;
-using FourPLWebAPI.Infrastructure.Messaging;
 using FourPLWebAPI.Infrastructure.Files;
 using FourPLWebAPI.Infrastructure.Scheduling;
 using FourPLWebAPI.Services.Abstractions;
@@ -104,7 +103,6 @@ public class Program
 
             // 註冊 Infrastructure 服務
             builder.Services.AddScoped<ISqlHelper, SqlHelper>();
-            builder.Services.AddScoped<ISftpHelper, SftpHelper>();
 
             // SAP Helper: 根據設定決定使用 Mock 或實際實作
             var useMockSap = builder.Configuration.GetValue<bool>("UseMockSap");
@@ -126,7 +124,6 @@ public class Program
 #pragma warning disable CA1416 // 驗證平台相容性
             builder.Services.AddScoped<INetworkDiskHelper, NetworkDiskHelper>();
 #pragma warning restore CA1416
-            builder.Services.AddScoped<IEmailHelper, EmailHelper>();
             builder.Services.AddScoped<ISftpConnectionFactory, SftpConnectionFactory>();
             builder.Services.AddScoped<IDataExchangeService, DataExchangeService>();
             builder.Services.AddScoped<ISapMasterDataRepository, SapMasterDataRepository>();

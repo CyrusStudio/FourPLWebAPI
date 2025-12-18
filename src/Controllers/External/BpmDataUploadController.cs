@@ -6,7 +6,7 @@ namespace FourPLWebAPI.Controllers.External;
 
 /// <summary>
 /// BPM 資料上傳控制器
-/// 將 BPM SQL Server To XML 並執行上傳
+/// 將 BPM SQL Server資料整理後 To XML 並執行上傳到 SAP ZP
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -18,11 +18,7 @@ public class BpmDataUploadController(
     private readonly ILogger<BpmDataUploadController> _logger = logger;
 
     /// <summary>
-    /// ===== Step 1: 將新資料加入 Queue =====
-    /// ===== Step 2: 處理 TWC1D002 訂單（獨立處理）=====
-    /// ===== Step 3: 處理 TWC0D003 樣品（獨立處理）=====
-    /// ===== Step 4: 處理 TWC0D004 退貨（獨立處理）=====
-    /// ===== Step 5: 批次寫入 Export =====
+    /// 將 BPM SQL Server資料整理後 To XML 並執行上傳到 SAP ZP (測試環境存本地)
     /// </summary>
     /// <returns>處理結果</returns>
     [HttpPost("execute")]

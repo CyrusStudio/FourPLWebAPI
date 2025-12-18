@@ -17,7 +17,7 @@ public class SapMasterDataController(
     private readonly ILogger<SapMasterDataController> _logger = logger;
 
     /// <summary>
-    /// 從 SAP 下載檔案後處理全部 (供排程呼叫)
+    /// 從 SAP 下載XML檔案後處理全部4到MS SQL (測試環境不刪檔)
     /// </summary>
     /// <returns>下載和處理結果</returns>
     [HttpPost("execute")]

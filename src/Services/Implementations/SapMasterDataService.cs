@@ -17,8 +17,11 @@ public class SapMasterDataService(
     private readonly ILogger<SapMasterDataService> _logger = logger;
     private readonly INetworkDiskHelper _networkDiskHelper = networkDiskHelper;
     private readonly ISapMasterDataRepository _masterDataRepository = masterDataRepository;
-    private readonly IConfigurationSection _processingSection = configuration.GetSection("DataExchange:SapFileProcessing:FileTypes");
-    private readonly IConfigurationSection _downloadSection = configuration.GetSection("DataExchange:SapToLocal");
+    private readonly IConfigurationSection _masterDataSection = configuration.GetSection("SapMasterData");
+    private readonly IConfigurationSection _processingSection = configuration.GetSection("SapMasterData:ProcessPaths");
+    private readonly IConfigurationSection _safetySection = configuration.GetSection("SafetySystem");
+
+    private bool IsProdMode => _safetySection.GetValue<bool>("IsProdMode", false);
 
     // 支援的檔案類型
     private static readonly string[] SupportedFileTypes = ["Customer", "Material", "Price", "Sales"];
@@ -40,8 +43,8 @@ public class SapMasterDataService(
             // 連接網路磁碟
             await _networkDiskHelper.ConnectAllAsync();
 
-            var sourcePath = _downloadSection["SourcePath"] ?? "";
-            var targetBasePath = _downloadSection["TargetPath"] ?? "";
+            var sourcePath = _masterDataSection["SapSourcePath"] ?? "";
+            var targetBasePath = _masterDataSection["LocalTargetPath"] ?? "";
 
             if (!Directory.Exists(sourcePath))
             {
@@ -79,9 +82,16 @@ public class SapMasterDataService(
                 File.Copy(filePath, targetPath, true);
                 _logger.LogInformation("複製: {Source} -> {Target}", Path.GetFileName(filePath), targetPath);
 
-                // 刪除原始檔案
-                File.Delete(filePath);
-                _logger.LogDebug("已刪除原始檔案: {FilePath}", filePath);
+                // 刪除原始檔案 (僅在生產模式執行，避免影響舊系統驗證)
+                if (IsProdMode)
+                {
+                    File.Delete(filePath);
+                    _logger.LogDebug("已刪除正式環境原始檔案: {FilePath}", filePath);
+                }
+                else
+                {
+                    _logger.LogInformation("【SAFETY KEEP】非生產模式，保留原始檔案: {FileName}", Path.GetFileName(filePath));
+                }
 
                 result.ProcessedFiles.Add(new SapDownloadFileInfo
                 {
@@ -157,9 +167,9 @@ public class SapMasterDataService(
             _logger.LogInformation("=== 開始處理 {FileType} 類型檔案 ===", fileType);
 
             var section = _processingSection.GetSection(fileType);
-            var sourcePath = section["SourcePath"] ?? "";
-            var successPath = section["SuccessPath"] ?? "";
-            var failPath = section["FailPath"] ?? "";
+            var sourcePath = section["Source"] ?? "";
+            var successPath = section["Success"] ?? "";
+            var failPath = section["Fail"] ?? "";
 
             if (string.IsNullOrEmpty(sourcePath))
             {
@@ -217,8 +227,8 @@ public class SapMasterDataService(
         try
         {
             var section = _processingSection.GetSection(fileType);
-            var successPath = section["SuccessPath"] ?? "";
-            var failPath = section["FailPath"] ?? "";
+            var successPath = section["Success"] ?? "";
+            var failPath = section["Fail"] ?? "";
 
             _logger.LogDebug("開始處理檔案: {FileName}", fileName);
 
@@ -257,7 +267,7 @@ public class SapMasterDataService(
             try
             {
                 var section = _processingSection.GetSection(fileType);
-                var failPath = section["FailPath"] ?? "";
+                var failPath = section["Fail"] ?? "";
                 if (!string.IsNullOrEmpty(failPath))
                 {
                     var destPath = Path.Combine(failPath, fileName);
@@ -339,7 +349,7 @@ public class SapMasterDataService(
             if (result.FailedItems.Count > 0)
             {
                 var section = _processingSection.GetSection(fileType);
-                var failPath = section["FailPath"] ?? "";
+                var failPath = section["Fail"] ?? "";
                 await WriteErrorLogAsync(filePath, typeName, result, failPath);
                 return false; // 有錯誤則視為失敗
             }
