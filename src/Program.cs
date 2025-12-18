@@ -120,7 +120,7 @@ public class Program
             }
 
             // 註冊 Business Services
-            builder.Services.AddScoped<ISOService, SOService>();
+            builder.Services.AddScoped<ISapSoSyncService, SapSoSyncService>();
 
             // 註冊 DataExchange 服務 (NetworkDiskHelper 僅支援 Windows)
 #pragma warning disable CA1416 // 驗證平台相容性
@@ -130,13 +130,14 @@ public class Program
             builder.Services.AddScoped<ISftpConnectionFactory, SftpConnectionFactory>();
             builder.Services.AddScoped<IDataExchangeService, DataExchangeService>();
             builder.Services.AddScoped<ISapMasterDataRepository, SapMasterDataRepository>();
-            builder.Services.AddScoped<ISapFileProcessor, SapFileProcessor>();
-            builder.Services.AddScoped<IDataTransformService, DataTransformService>();
+            builder.Services.AddScoped<ISapMasterDataService, SapMasterDataService>();
+            builder.Services.AddScoped<IBpmDataUploadService, BpmDataUploadService>();
 
             // 註冊 Job 服務
             builder.Services.AddScoped<FourPLWebAPI.Jobs.Infrastructure.JobExecutor>();
-            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SOSyncJob>();
-            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SapFileProcessJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SapSoSyncJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.SapMasterDataJob>();
+            builder.Services.AddScoped<FourPLWebAPI.Jobs.Handlers.BpmDataUploadJob>();
 
             // ===== Hangfire 設定 =====
             var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")

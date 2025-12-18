@@ -1,6 +1,7 @@
 using FourPLWebAPI.Infrastructure.Abstractions;
 using FourPLWebAPI.Models;
 using FourPLWebAPI.Services.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace FourPLWebAPI.Services.Implementations;
 
@@ -8,14 +9,14 @@ namespace FourPLWebAPI.Services.Implementations;
 /// SO 主檔同步服務實作
 /// 從 SAP ZT4PL_BILLING 表查詢資料並同步至 SQL Server
 /// </summary>
-public class SOService(
+public class SapSoSyncService(
     ISapHelper sapHelper,
     ISqlHelper sqlHelper,
-    ILogger<SOService> logger) : ISOService
+    ILogger<SapSoSyncService> logger) : ISapSoSyncService
 {
     private readonly ISapHelper _sapHelper = sapHelper;
     private readonly ISqlHelper _sqlHelper = sqlHelper;
-    private readonly ILogger<SOService> _logger = logger;
+    private readonly ILogger<SapSoSyncService> _logger = logger;
 
     // SAPDS 資料庫連線字串名稱
     private const string SAPDSConnectionName = "SAPDSConnection";

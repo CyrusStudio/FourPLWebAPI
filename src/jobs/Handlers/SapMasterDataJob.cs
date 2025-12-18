@@ -1,3 +1,4 @@
+using FourPLWebAPI.Models;
 using FourPLWebAPI.Services.Abstractions;
 using Hangfire;
 
@@ -7,10 +8,10 @@ namespace FourPLWebAPI.Jobs.Handlers;
 /// SAP 檔案處理排程任務
 /// 定期從 SAP 下載檔案並處理
 /// </summary>
-public class SapFileProcessJob(ISapFileProcessor sapFileProcessor, ILogger<SapFileProcessJob> logger)
+public class SapMasterDataJob(ISapMasterDataService masterDataService, ILogger<SapMasterDataJob> logger)
 {
-    private readonly ISapFileProcessor _sapFileProcessor = sapFileProcessor;
-    private readonly ILogger<SapFileProcessJob> _logger = logger;
+    private readonly ISapMasterDataService _masterDataService = masterDataService;
+    private readonly ILogger<SapMasterDataJob> _logger = logger;
 
     /// <summary>
     /// 執行 SAP 檔案下載並處理
@@ -24,12 +25,11 @@ public class SapFileProcessJob(ISapFileProcessor sapFileProcessor, ILogger<SapFi
         {
             // 1. 下載檔案
             _logger.LogInformation("步驟 1/2: 從 SAP 下載檔案");
-            var downloadResult = await _sapFileProcessor.DownloadFromSapAsync();
+            var downloadResult = await _masterDataService.DownloadFromSapAsync();
 
             if (!downloadResult.Success)
             {
                 _logger.LogWarning("SAP 檔案下載失敗: {Message}", downloadResult.ErrorMessage);
-                // 下載失敗仍可嘗試處理本地現有檔案，或依需求在此回傳
             }
             else
             {
@@ -38,7 +38,7 @@ public class SapFileProcessJob(ISapFileProcessor sapFileProcessor, ILogger<SapFi
 
             // 2. 處理檔案
             _logger.LogInformation("步驟 2/2: 開始處理解析 SAP 檔案並更新資料庫");
-            var processResults = await _sapFileProcessor.ProcessAllAsync();
+            var processResults = await _masterDataService.ProcessAllAsync();
             var enumerable = processResults as FileProcessingResult[] ?? [.. processResults];
 
             var totalCount = enumerable.Sum(r => r.TotalCount);

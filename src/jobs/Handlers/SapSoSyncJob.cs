@@ -7,10 +7,10 @@ namespace FourPLWebAPI.Jobs.Handlers;
 /// SO 主檔同步排程任務
 /// 定期從 SAP 同步 SO 資料至 SQL Server
 /// </summary>
-public class SOSyncJob(ISOService soService, ILogger<SOSyncJob> logger)
+public class SapSoSyncJob(ISapSoSyncService soService, ILogger<SapSoSyncJob> logger)
 {
-    private readonly ISOService _soService = soService;
-    private readonly ILogger<SOSyncJob> _logger = logger;
+    private readonly ISapSoSyncService _soService = soService;
+    private readonly ILogger<SapSoSyncJob> _logger = logger;
 
     /// <summary>
     /// 執行同步任務

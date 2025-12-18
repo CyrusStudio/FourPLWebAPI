@@ -1,5 +1,5 @@
 using FourPLWebAPI.Infrastructure.Abstractions;
-
+using FourPLWebAPI.Models;
 using FourPLWebAPI.Services.Abstractions;
 
 namespace FourPLWebAPI.Services.Implementations;
@@ -22,6 +22,11 @@ public class DataExchangeService(
     private readonly IConfigurationSection _localToSapSection = configuration.GetSection("DataExchange:LocalToSap");
     private readonly IConfigurationSection _zlSection = configuration.GetSection("DataExchange:SftpTargets:ZL");
     private readonly IConfigurationSection _arichSection = configuration.GetSection("DataExchange:SftpTargets:ARICH");
+    private readonly IConfigurationSection _runModeSection = configuration.GetSection("DataExchange:RunMode");
+
+    private bool IsProdMode => _runModeSection.GetValue<bool>("IsProd", false);
+    private bool IsSafeMode => !IsProdMode;
+    private string SafeOutputPath => _runModeSection["SafeOutputPath"] ?? @"C:\Lotus\SafeOutput\";
 
 
     #region 場景二：BPM → SAP (上傳)
@@ -71,10 +76,21 @@ public class DataExchangeService(
                 var fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
                 var extension = Path.GetExtension(filePath);
 
-                // 上傳至 SAP
-                var destPath = Path.Combine(targetPath, fileName);
+                // 上傳至 SAP (或安全導向)
+                var destPath = IsSafeMode
+                    ? Path.Combine(SafeOutputPath, "SAP_Internal", fileName)
+                    : Path.Combine(targetPath, fileName);
+
+                if (IsSafeMode)
+                {
+                    _logger.LogWarning("【SAFETY REDIRECT】安全重新導向開啟，檔案 {FileName} 已導向至 {DestPath}", fileName, destPath);
+                    var testDir = Path.GetDirectoryName(destPath);
+                    if (!string.IsNullOrEmpty(testDir) && !Directory.Exists(testDir)) Directory.CreateDirectory(testDir);
+                }
+
                 File.Copy(filePath, destPath, true);
-                _logger.LogInformation("上傳: {FileName} -> {DestPath}", fileName, destPath);
+                if (!IsSafeMode) _logger.LogInformation("上傳: {FileName} -> {DestPath}", fileName, destPath);
+
 
                 // 備份
                 if (!string.IsNullOrEmpty(backupPath))
@@ -175,9 +191,23 @@ public class DataExchangeService(
                 var fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
                 var extension = Path.GetExtension(filePath);
 
-                // 上傳至 SFTP
-                var remotePath = $"{targetPath}/{fileName}";
-                var uploadSuccess = await _sftpFactory.UploadFileAsync(targetName, filePath, remotePath);
+                // 上傳至 SFTP (或安全導向)
+                bool uploadSuccess;
+                if (IsSafeMode)
+                {
+                    var testPath = Path.Combine(SafeOutputPath, targetName, fileName);
+                    var testDir = Path.GetDirectoryName(testPath);
+                    if (!string.IsNullOrEmpty(testDir) && !Directory.Exists(testDir)) Directory.CreateDirectory(testDir);
+
+                    File.Copy(filePath, testPath, true);
+                    _logger.LogWarning("【SAFETY REDIRECT】安全重新導向開啟，SFTP 檔案 {FileName} 已重新導向至 {TestPath}", fileName, testPath);
+                    uploadSuccess = true;
+                }
+                else
+                {
+                    var remotePath = $"{targetPath}/{fileName}";
+                    uploadSuccess = await _sftpFactory.UploadFileAsync(targetName, filePath, remotePath);
+                }
 
                 if (uploadSuccess)
                 {

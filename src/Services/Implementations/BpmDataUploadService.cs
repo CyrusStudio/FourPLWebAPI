@@ -4,19 +4,22 @@ using Microsoft.Extensions.Configuration;
 using FourPLWebAPI.Infrastructure.Abstractions;
 using FourPLWebAPI.Models;
 using FourPLWebAPI.Extensions;
-
 using FourPLWebAPI.Services.Abstractions;
 
 namespace FourPLWebAPI.Services.Implementations;
 
 /// <summary>
-/// 資料轉換服務實作
-/// 將 BPM 表單資料轉換為 SAP 匯出格式
+/// BPM 資料上傳服務實作
+/// 將 BPM 表單資料轉換為 SAP 匯出格式並上傳
 /// </summary>
-public class DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger) : IDataTransformService
+public class BpmDataUploadService(
+    ISqlHelper sqlHelper,
+    IDataExchangeService dataExchangeService,
+    ILogger<BpmDataUploadService> logger) : IBpmDataUploadService
 {
     private readonly ISqlHelper _sqlHelper = sqlHelper;
-    private readonly ILogger<DataTransformService> _logger = logger;
+    private readonly IDataExchangeService _dataExchangeService = dataExchangeService;
+    private readonly ILogger<BpmDataUploadService> _logger = logger;
 
     // 連線字串名稱常數
     private const string SapdsConnection = "SAPDSConnection";
@@ -161,6 +164,89 @@ public class DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformSer
         }
 
         return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<BpmUploadExecutionResult> ExecuteFullUploadProcessAsync()
+    {
+        var result = new BpmUploadExecutionResult { Success = true };
+        _logger.LogInformation("開始執行完整 BPM 資料上傳流程");
+
+        // 1. 轉換 (BPM -> Staging)
+        result.TransformResult = await ProcessPendingAsync();
+        if (!result.TransformResult.Success)
+        {
+            _logger.LogWarning("資料轉換過程有錯誤，但繼續執行後續流程");
+        }
+
+        // 2. 生成 XML
+        var (xmlFiles, generateSuccess) = await GenerateExportXmlAsync();
+        result.Success = generateSuccess;
+        result.XmlMessages.Add($"生成 XML 檔案共 {xmlFiles.Count} 個");
+
+        // 3. 上傳
+        if (xmlFiles.Count > 0)
+        {
+            _logger.LogInformation("開始執行檔案上傳流程");
+            result.UploadResults.Add(await _dataExchangeService.UploadToSapAsync());
+            result.UploadResults.Add(await _dataExchangeService.UploadToZLAsync());
+            result.UploadResults.Add(await _dataExchangeService.UploadToARICHAsync());
+        }
+        else
+        {
+            _logger.LogInformation("無檔案需要上傳");
+        }
+
+        _logger.LogInformation("完整上傳流程執行完成, Success: {Success}", result.Success);
+        return result;
+    }
+
+    /// <summary>
+    /// 從 Export_Verify 表生成 XML 檔案
+    /// </summary>
+    private async Task<(List<string> Files, bool Success)> GenerateExportXmlAsync()
+    {
+        _logger.LogInformation("從 {Table} 生成 XML 檔案", ExportVerifyTable);
+        var files = new List<string>();
+        var success = true;
+
+        try
+        {
+            // 查詢狀態為 0 (待生成) 的 RequisitionID
+            const string sql = "SELECT DISTINCT RequisitionID FROM FourPL_DataTrans_Export_Verify WHERE ExportStatus = 0";
+            var reqIds = await _sqlHelper.QueryWithConnectionAsync<string>(sql, null, SapdsConnection);
+
+            foreach (var reqId in reqIds)
+            {
+                try
+                {
+                    // 此處應實作 XML 生成邏輯 (基於 Schema)
+                    // 目前採簡化邏輯：抓取資料並透過 DataContract 序列化
+                    _logger.LogDebug("處理 RequisitionID: {ReqId}", reqId);
+
+                    // TODO: 實作具體的 XML 生成與儲存到 DataExchange 的 SourcePath
+                    // 暫時模擬生成
+                    files.Add($"Xml_Generated_{reqId}.xml");
+
+                    // 更新狀態為 1 (已生成)
+                    await _sqlHelper.ExecuteAsync(
+                        "UPDATE FourPL_DataTrans_Export_Verify SET ExportStatus = 1 WHERE RequisitionID = @ReqId",
+                        new { ReqId = reqId });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "生成 RequisitionID {ReqId} 的 XML 失敗", reqId);
+                    success = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "生成 XML 流程發生錯誤");
+            success = false;
+        }
+
+        return (files, success);
     }
 
 

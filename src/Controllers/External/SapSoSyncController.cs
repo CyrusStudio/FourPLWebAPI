@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace FourPLWebAPI.Controllers.External;
 
 /// <summary>
-/// 整合 API Controller
+/// SAP SO 同步控制器
 /// SAP RFC To BPM SQL Server
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class IntegrationController(ISOService soService, ILogger<IntegrationController> logger) : ControllerBase
+public class SapSoSyncController(ISapSoSyncService soSyncService, ILogger<SapSoSyncController> logger) : ControllerBase
 {
-    private readonly ISOService _soService = soService;
-    private readonly ILogger<IntegrationController> _logger = logger;
+    private readonly ISapSoSyncService _soSyncService = soSyncService;
+    private readonly ILogger<SapSoSyncController> _logger = logger;
 
     /// <summary>
     /// 同步 SO 主檔資料至 SQL Server (自動處理兩個表)
@@ -46,7 +46,7 @@ public class IntegrationController(ISOService soService, ILogger<IntegrationCont
 
         try
         {
-            var result = await _soService.SyncAllSOMasterAsync(request?.StartDate);
+            var result = await _soSyncService.SyncAllSOMasterAsync(request?.StartDate);
             return Ok(result);
         }
         catch (Exception ex)

@@ -5,17 +5,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace FourPLWebAPI.Controllers.External;
 
 /// <summary>
-/// 資料轉換 API
-/// 將 BPM SQL Server To XML
+/// BPM 資料上傳控制器
+/// 將 BPM SQL Server To XML 並執行上傳
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class DataTransformController(
-    IDataTransformService dataTransformService,
-    ILogger<DataTransformController> logger) : ControllerBase
+public class BpmDataUploadController(
+    IBpmDataUploadService uploadService,
+    ILogger<BpmDataUploadController> logger) : ControllerBase
 {
-    private readonly IDataTransformService _dataTransformService = dataTransformService;
-    private readonly ILogger<DataTransformController> _logger = logger;
+    private readonly IBpmDataUploadService _uploadService = uploadService;
+    private readonly ILogger<BpmDataUploadController> _logger = logger;
 
     /// <summary>
     /// ===== Step 1: 將新資料加入 Queue =====
@@ -25,12 +25,11 @@ public class DataTransformController(
     /// ===== Step 5: 批次寫入 Export =====
     /// </summary>
     /// <returns>處理結果</returns>
-    [HttpPost("pending")]
-    public async Task<ActionResult<DataTransformResult>> ProcessPending()
+    [HttpPost("execute")]
+    public async Task<ActionResult<BpmUploadExecutionResult>> ExecuteFullProcess()
     {
-        _logger.LogInformation("收到批次處理請求");
-        var result = await _dataTransformService.ProcessPendingAsync();
-
+        _logger.LogInformation("收到完整上傳流程請求");
+        var result = await _uploadService.ExecuteFullUploadProcessAsync();
         return result.Success ? Ok(result) : BadRequest(result);
     }
 }

@@ -1,5 +1,5 @@
 using FourPLWebAPI.Infrastructure.Abstractions;
-
+using FourPLWebAPI.Models;
 using FourPLWebAPI.Services.Abstractions;
 
 namespace FourPLWebAPI.Services.Implementations;
@@ -8,13 +8,13 @@ namespace FourPLWebAPI.Services.Implementations;
 /// SAP 檔案服務實作
 /// 處理從 SAP 下載檔案和後續處理 (Customer, Material, Price, Sales)
 /// </summary>
-public class SapFileProcessor(
+public class SapMasterDataService(
     IConfiguration configuration,
-    ILogger<SapFileProcessor> logger,
+    ILogger<SapMasterDataService> logger,
     INetworkDiskHelper networkDiskHelper,
-    ISapMasterDataRepository masterDataRepository) : ISapFileProcessor
+    ISapMasterDataRepository masterDataRepository) : ISapMasterDataService
 {
-    private readonly ILogger<SapFileProcessor> _logger = logger;
+    private readonly ILogger<SapMasterDataService> _logger = logger;
     private readonly INetworkDiskHelper _networkDiskHelper = networkDiskHelper;
     private readonly ISapMasterDataRepository _masterDataRepository = masterDataRepository;
     private readonly IConfigurationSection _processingSection = configuration.GetSection("DataExchange:SapFileProcessing:FileTypes");
