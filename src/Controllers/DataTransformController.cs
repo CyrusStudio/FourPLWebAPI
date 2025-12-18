@@ -26,13 +26,12 @@ public class DataTransformController : ControllerBase
     /// <summary>
     /// 批次處理待處理資料
     /// </summary>
-    /// <param name="startDate">起始日期（可選，預設 2025/11/01）</param>
     /// <returns>處理結果</returns>
     [HttpPost("pending")]
-    public async Task<ActionResult<DataTransformResult>> ProcessPending([FromQuery] DateTime? startDate = null)
+    public async Task<ActionResult<DataTransformResult>> ProcessPending()
     {
-        _logger.LogInformation("收到批次處理請求，起始日期: {StartDate}", startDate);
-        var result = await _dataTransformService.ProcessPendingAsync(startDate);
+        _logger.LogInformation("收到批次處理請求");
+        var result = await _dataTransformService.ProcessPendingAsync();
 
         return result.Success ? Ok(result) : BadRequest(result);
     }

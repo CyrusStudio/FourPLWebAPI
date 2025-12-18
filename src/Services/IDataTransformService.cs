@@ -11,7 +11,6 @@ public interface IDataTransformService
     /// <summary>
     /// 批次處理所有待處理資料
     /// </summary>
-    /// <param name="startDate">起始日期（可選）</param>
     /// <returns>處理結果</returns>
-    Task<DataTransformResult> ProcessPendingAsync(DateTime? startDate = null);
+    Task<DataTransformResult> ProcessPendingAsync();
 }

@@ -11,10 +11,10 @@ namespace FourPLWebAPI.Services;
 /// 資料轉換服務實作
 /// 將 BPM 表單資料轉換為 SAP 匯出格式
 /// </summary>
-public class DataTransformService : IDataTransformService
+public class DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger) : IDataTransformService
 {
-    private readonly ISqlHelper _sqlHelper;
-    private readonly ILogger<DataTransformService> _logger;
+    private readonly ISqlHelper _sqlHelper = sqlHelper;
+    private readonly ILogger<DataTransformService> _logger = logger;
 
     // 連線字串名稱常數
     private const string SapdsConnection = "SAPDSConnection";
@@ -25,20 +25,14 @@ public class DataTransformService : IDataTransformService
 
     // Export DTO 共用常數（減少重複程式碼）
     private static readonly ExportPriceInfo ZeroPrice = new(PricingUnit: "1000");
+    private static readonly ExportPriceInfo SampleZeroPrice = new(PricingUnit: "");  // ZTW6 專用：PricingUnit 為空
     private static readonly ExportReturnInfo EmptyReturn = new();
     private static readonly ExportReturnInfo SampleCostCenter = new(CostCenter: "TW02_72100");
 
-    public DataTransformService(ISqlHelper sqlHelper, ILogger<DataTransformService> logger)
-    {
-        _sqlHelper = sqlHelper;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
-    public async Task<DataTransformResult> ProcessPendingAsync(DateTime? startDate = null)
+    public async Task<DataTransformResult> ProcessPendingAsync()
     {
-        var effectiveStartDate = startDate ?? new DateTime(2025, 11, 1);
-        _logger.LogInformation("批次處理待處理資料，起始日期: {StartDate}", effectiveStartDate);
+        _logger.LogInformation("批次處理待處理資料");
 
         var result = new DataTransformResult { Success = true };
         var allExportItems = new List<DataTransExport>();
@@ -185,8 +179,8 @@ public class DataTransformService : IDataTransformService
               AND (S.TimeLastAction < CONVERT(DATETIME, '2025-12-17 00:00:00', 102))
               AND Q.RequisitionID IS NULL";
 
-        return (await _sqlHelper.QueryWithConnectionAsync<(string RequisitionID, string SerialID, string DiagramID)>(
-            sql, null, SapdsConnection)).ToList();
+        return [.. await _sqlHelper.QueryWithConnectionAsync<(string RequisitionID, string SerialID, string DiagramID)>(
+            sql, null, SapdsConnection)];
     }
 
     /// <summary>
@@ -292,8 +286,8 @@ public class DataTransformService : IDataTransformService
             WHERE Q.DiagramID = 'TWC0D003' AND Q.ProcessedAt IS NULL AND M.Invoice IN (2,3)
             ORDER BY S.RequisitionID, D.DNo";
 
-        return (await _sqlHelper.QueryWithConnectionAsync<SampleBatchItem>(
-            sql, null, SapdsConnection)).ToList();
+        return [.. await _sqlHelper.QueryWithConnectionAsync<SampleBatchItem>(
+            sql, null, SapdsConnection)];
     }
 
     /// <summary>
@@ -324,8 +318,8 @@ public class DataTransformService : IDataTransformService
             WHERE Q.DiagramID = 'TWC0D004' AND Q.ProcessedAt IS NULL AND M.Invoice IN (2,3)
             ORDER BY S.RequisitionID, D.ItemNo";
 
-        return (await _sqlHelper.QueryWithConnectionAsync<ReturnBatchItem>(
-            sql, null, SapdsConnection)).ToList();
+        return [.. await _sqlHelper.QueryWithConnectionAsync<ReturnBatchItem>(
+            sql, null, SapdsConnection)];
     }
 
     /// <summary>
@@ -397,7 +391,7 @@ public class DataTransformService : IDataTransformService
     /// 轉換訂單批次資料為 Export 格式
     /// D + D2 綁一起（D2 依賴 D 的 MaterialCode），D3 獨立
     /// </summary>
-    private (List<DataTransExport> Exports, List<string> Errors) TransformOrderBatchItems(
+    private static (List<DataTransExport> Exports, List<string> Errors) TransformOrderBatchItems(
         List<OrderBatchItem> items,
         List<OrderFreeGoodsBatchItem> freeGoods,
         List<OrderAddOnBatchItem> addOns)
@@ -490,7 +484,7 @@ public class DataTransformService : IDataTransformService
     /// <summary>
     /// 轉換退貨批次資料為 Export 格式
     /// </summary>
-    private List<DataTransExport> TransformReturnBatchItems(List<ReturnBatchItem> items)
+    private static List<DataTransExport> TransformReturnBatchItems(List<ReturnBatchItem> items)
     {
         var exports = new List<DataTransExport>();
 
@@ -537,7 +531,7 @@ public class DataTransformService : IDataTransformService
     /// <summary>
     /// 統一的 Export 建立方法 - 使用 Record DTOs 封裝參數
     /// </summary>
-    private DataTransExport CreateExportBase(
+    private static DataTransExport CreateExportBase(
         ExportFormInfo form,
         ExportCustomerInfo customer,
         ExportItemInfo item,
@@ -596,7 +590,7 @@ public class DataTransformService : IDataTransformService
 
 
     // ZTW1: 訂單銷貨
-    private DataTransExport CreateBatchOrderExport(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate, string category, string debitCredit)
+    private static DataTransExport CreateBatchOrderExport(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate, string category, string debitCredit)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
             i.ToCustomerInfo(),
@@ -604,11 +598,11 @@ public class DataTransformService : IDataTransformService
             i.ToPriceInfo(),
             EmptyReturn with { ItemPurpose = i.Purpose.OrEmpty() });
 
-    private bool ShouldCreateBatchZTW2(OrderBatchItem item)
+    private static bool ShouldCreateBatchZTW2(OrderBatchItem item)
         => item.ToDiscountPriceInfo().Price != null;
 
     // ZTW2: 銷貨折讓
-    private DataTransExport? CreateBatchOrderZTW2(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport? CreateBatchOrderZTW2(OrderBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
     {
         var (discountPrice, _) = i.ToDiscountPriceInfo();
         if (discountPrice == null) return null;
@@ -622,7 +616,7 @@ public class DataTransformService : IDataTransformService
     }
 
     // ZTW5: 贈品
-    private DataTransExport CreateBatchFreeGoodsExport(OrderBatchItem m, OrderFreeGoodsBatchItem fg, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport CreateBatchFreeGoodsExport(OrderBatchItem m, OrderFreeGoodsBatchItem fg, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(
             m.ToFormInfo(formNo, itemNo, refItem, approvalDate),
             m.ToCustomerInfo(),
@@ -632,7 +626,7 @@ public class DataTransformService : IDataTransformService
 
 
     // ZTW5: 加購品（獨立處理，使用自身的 M 表欄位）
-    private DataTransExport CreateAddOnExportIndependent(OrderAddOnBatchItem addOn, string formNo, int itemNo, string approvalDate)
+    private static DataTransExport CreateAddOnExportIndependent(OrderAddOnBatchItem addOn, string formNo, int itemNo, string approvalDate)
         => CreateExportBase(
             addOn.ToFormInfo(formNo, itemNo, approvalDate),
             addOn.ToCustomerInfo(),
@@ -684,7 +678,7 @@ public class DataTransformService : IDataTransformService
                     i.ToFormInfo(formNo, approvalDate),
                     i.ToCustomerInfo(remark),
                     i.ToItemInfo(),
-                    ZeroPrice,
+                    SampleZeroPrice,
                     SampleCostCenter with { ItemPurpose = i.Purpose ?? "" }));
 
                 counter++;
@@ -694,7 +688,7 @@ public class DataTransformService : IDataTransformService
     }
 
     // ZTW4: 銷貨退回
-    private DataTransExport CreateReturnType1Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
+    private static DataTransExport CreateReturnType1Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, itemNo, approvalDate),
             i.ToCustomerInfo(),
@@ -703,7 +697,7 @@ public class DataTransformService : IDataTransformService
             i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW7: 退貨入庫
-    private DataTransExport CreateReturnType2ExportZTW7(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport CreateReturnType2ExportZTW7(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
             i.ToCustomerInfo(),
@@ -712,7 +706,7 @@ public class DataTransformService : IDataTransformService
             i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW8: 換貨出庫
-    private DataTransExport CreateReturnType2ExportZTW8(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport CreateReturnType2ExportZTW8(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
             i.ToCustomerInfo(),
@@ -721,7 +715,7 @@ public class DataTransformService : IDataTransformService
             i.ToReturnInfo(i.ReturnCode.OrEmpty()));
 
     // ZTW3: 退貨折讓（使用舊價格）
-    private DataTransExport CreateReturnType3ExportZTW3(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport CreateReturnType3ExportZTW3(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
     {
         var unitPrice = i.Qty > 0 ? i.TotalUnitPriceInTax / i.Qty * i.ExchangeOut : 0;
         return CreateExportBase(
@@ -733,7 +727,7 @@ public class DataTransformService : IDataTransformService
     }
 
     // ZTWB: 換貨重開（使用新價格）
-    private DataTransExport CreateReturnType3ExportZTWB(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
+    private static DataTransExport CreateReturnType3ExportZTWB(ReturnBatchItem i, string formNo, int itemNo, int refItem, string approvalDate)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, refItem, approvalDate),
             i.ToCustomerInfo(),
@@ -742,7 +736,7 @@ public class DataTransformService : IDataTransformService
             i.ToReturnInfo(i.ReturnCode.OrEmpty(), includeInvoice: false));
 
     // Type4: 銷貨折讓
-    private DataTransExport CreateReturnType4Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
+    private static DataTransExport CreateReturnType4Export(ReturnBatchItem i, string formNo, int itemNo, string approvalDate)
         => CreateExportBase(
             i.ToFormInfo(formNo, itemNo, itemNo, approvalDate),
             i.ToCustomerInfo(),

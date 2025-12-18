@@ -9,21 +9,12 @@ namespace FourPLWebAPI.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class SapFileController : ControllerBase
+public class SapFileController(
+    ISapFileProcessor sapFileProcessor,
+    ILogger<SapFileController> logger) : ControllerBase
 {
-    private readonly ISapFileProcessor _sapFileProcessor;
-    private readonly ILogger<SapFileController> _logger;
-
-    /// <summary>
-    /// 建構函式
-    /// </summary>
-    public SapFileController(
-        ISapFileProcessor sapFileProcessor,
-        ILogger<SapFileController> logger)
-    {
-        _sapFileProcessor = sapFileProcessor;
-        _logger = logger;
-    }
+    private readonly ISapFileProcessor _sapFileProcessor = sapFileProcessor;
+    private readonly ILogger<SapFileController> _logger = logger;
 
     #region SAP 檔案下載
 
@@ -50,13 +41,14 @@ public class SapFileController : ControllerBase
     {
         _logger.LogInformation("API 呼叫: 從 SAP 下載檔案並處理全部");
 
-        var executeResult = new SapExecuteResult();
+        var executeResult = new SapExecuteResult
+        {
+            // 步驟 1：從 SAP 下載檔案
+            DownloadResult = await _sapFileProcessor.DownloadFromSapAsync(),
 
-        // 步驟 1：從 SAP 下載檔案
-        executeResult.DownloadResult = await _sapFileProcessor.DownloadFromSapAsync();
-
-        // 步驟 2：處理所有檔案
-        executeResult.ProcessResults = await _sapFileProcessor.ProcessAllAsync();
+            // 步驟 2：處理所有檔案
+            ProcessResults = await _sapFileProcessor.ProcessAllAsync()
+        };
 
         // 計算總結
         var processList = executeResult.ProcessResults.ToList();
@@ -173,7 +165,7 @@ public class SapFileController : ControllerBase
         return Ok(info);
     }
 
-    private int GetFileCount(string? path)
+    private static int GetFileCount(string? path)
     {
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
             return 0;
@@ -227,7 +219,7 @@ public class SapExecuteResult
     /// <summary>
     /// 處理結果列表
     /// </summary>
-    public IEnumerable<FileProcessingResult> ProcessResults { get; set; } = new List<FileProcessingResult>();
+    public IEnumerable<FileProcessingResult> ProcessResults { get; set; } = [];
 
     /// <summary>
     /// 總處理檔案數
