@@ -1,4 +1,4 @@
-# Release Build Task
+# Release Build Task (Re-run)
 
 - [x] 初始化發布建置任務 <!-- id: 0 -->
 - [x] 執行 `dotnet publish` 進行 Release 建置 <!-- id: 1 -->

@@ -23,6 +23,9 @@ public class SapMasterDataJob(ISapMasterDataService masterDataService, ILogger<S
 
         try
         {
+            var hasError = false;
+            var errorMessages = new List<string>();
+
             // 1. 下載檔案
             _logger.LogInformation("步驟 1/2: 從 SAP 下載檔案");
             var downloadResult = await _masterDataService.DownloadFromSapAsync();
@@ -30,6 +33,8 @@ public class SapMasterDataJob(ISapMasterDataService masterDataService, ILogger<S
             if (!downloadResult.Success)
             {
                 _logger.LogWarning("SAP 檔案下載失敗: {Message}", downloadResult.ErrorMessage);
+                hasError = true;
+                errorMessages.Add($"下載失敗: {downloadResult.ErrorMessage}");
             }
             else
             {
@@ -56,6 +61,14 @@ public class SapMasterDataJob(ISapMasterDataService masterDataService, ILogger<S
                 _logger.LogWarning(
                     "SAP 檔案處理任務完成，但有部分失敗 - 總計: {Total}, 成功: {Success}, 失敗: {Fail}",
                     totalCount, successCount, failCount);
+                hasError = true;
+                errorMessages.Add($"檔案處理有 {failCount} 個失敗");
+            }
+
+            // 如果有任何錯誤，拋出例外讓 Hangfire 知道
+            if (hasError)
+            {
+                throw new InvalidOperationException($"SAP 檔案處理任務未完全成功: {string.Join(", ", errorMessages)}");
             }
         }
         catch (Exception ex)

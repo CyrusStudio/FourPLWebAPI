@@ -44,6 +44,7 @@ public class SapSoSyncJob(ISapSoSyncService soService, ILogger<SapSoSyncJob> log
             else
             {
                 _logger.LogWarning("SO 同步排程任務部分失敗 - {Message}", result.Message);
+                throw new InvalidOperationException($"SO 同步排程任務失敗: {result.Message}");
             }
         }
         catch (Exception ex)

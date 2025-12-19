@@ -1,17 +1,15 @@
-# Simplified Production Logging Fix
+# Release Build Implementation Plan
 
-## User Review Required
-> [!TIP]
-> To avoid complex IIS permissions within `inetpub/wwwroot`, we are moving the logs to a dedicated root folder: **`C:\FourPLLogs\`**. This is usually much easier to manage and less prone to inheritance issues.
+執行項目的 Release 建置並發布至指定目錄。
 
 ## Proposed Changes
 
-### Configuration
+### Build & Publish
+使用 .NET CLI 進行發布。
 
-#### [MODIFY] [Program.cs](file:///c:/Lotus/FourPLWebAPI/src/Program.cs)
-- Change Serilog File path to `@"C:\FourPLLogs\fourplwebapi-.log"`.
+- 執行 `dotnet publish src/FourPLWebAPI.csproj -c Release -o src/publish`
 
 ## Verification Plan
-1. **Build**: Run `dotnet publish -c Release`.
-2. **Setup**: Create the folder `C:\FourPLLogs` on the server.
-3. **Verify**: Check that logs appear in `C:\FourPLLogs` after restarting the application.
+
+### Manual Verification
+- 檢查 `src/publish` 目錄是否包含可執行的 DLL 及相關設定檔。

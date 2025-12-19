@@ -4,9 +4,9 @@ namespace FourPLWebAPI.Models;
 
 /// <summary>
 /// Sales 主資料模型 (業務人員)
-/// 寫入 SAPDS.Sales_SalesMaster 資料表
+/// 寫入 SAPDS.Sales_SalesMaster_new 資料表
 /// </summary>
-[SapMasterData("Sales_SalesMaster", "SALES", "ADAccount")]
+[SapMasterData("Sales_SalesMaster_new", "SALES", "ADAccount")]
 public class SalesMaster
 {
     /// <summary>

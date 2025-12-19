@@ -16,5 +16,13 @@ public class BpmDataUploadJob(IBpmDataUploadService uploadService, ILogger<BpmDa
         _logger.LogInformation("開始執行 BPM 資料上傳任務");
         var result = await _uploadService.ExecuteFullUploadProcessAsync();
         _logger.LogInformation("BPM 資料上傳任務執行完成, Success: {Success}", result.Success);
+
+        if (!result.Success)
+        {
+            var errorMessage = result.XmlMessages.Any()
+                ? string.Join("; ", result.XmlMessages)
+                : "未知錯誤";
+            throw new InvalidOperationException($"BPM 資料上傳任務失敗: {errorMessage}");
+        }
     }
 }

@@ -4,9 +4,9 @@ namespace FourPLWebAPI.Models;
 
 /// <summary>
 /// Material 主資料模型 (物料)
-/// 寫入 SAPDS.Sales_MaterialMaster 資料表
+/// 寫入 SAPDS.Sales_MaterialMaster_new 資料表
 /// </summary>
-[SapMasterData("Sales_MaterialMaster", "MATERIAL", "MaterialCode", "SalesOrg", "DistributionChannel", "Division")]
+[SapMasterData("Sales_MaterialMaster_new", "MATERIAL", "MaterialCode", "SalesOrg", "DistributionChannel", "Division")]
 public class MaterialMaster
 {
     /// <summary>

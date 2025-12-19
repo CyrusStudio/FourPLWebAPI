@@ -4,9 +4,9 @@ namespace FourPLWebAPI.Models;
 
 /// <summary>
 /// Customer 主資料模型
-/// 寫入 SAPDS.Sales_CustomerMaster 資料表
+/// 寫入 SAPDS.Sales_CustomerMaster_new 資料表
 /// </summary>
-[SapMasterData("Sales_CustomerMaster", "CUSTOMER", "Number", "SalesOrg", "DistributionChannel", "Division", "PartnerFunction", "SPNumber")]
+[SapMasterData("Sales_CustomerMaster_new", "CUSTOMER", "Number", "SalesOrg", "DistributionChannel", "Division", "PartnerFunction", "SPNumber")]
 public class CustomerMaster
 {
     /// <summary>

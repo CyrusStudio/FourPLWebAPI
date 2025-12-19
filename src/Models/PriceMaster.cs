@@ -4,9 +4,9 @@ namespace FourPLWebAPI.Models;
 
 /// <summary>
 /// Price 主資料模型 (價格)
-/// 寫入 SAPDS.Sales_PriceMaster 資料表
+/// 寫入 SAPDS.Sales_PriceMaster_new 資料表
 /// </summary>
-[SapMasterData("Sales_PriceMaster", "PRICE", "SalesOrg", "DistributionChannel", "PricingType", "PricingGroup", "DocCurrency", "MaterialCode", "ValidOn")]
+[SapMasterData("Sales_PriceMaster_new", "PRICE", "SalesOrg", "DistributionChannel", "PricingType", "PricingGroup", "DocCurrency", "MaterialCode", "ValidOn")]
 public class PriceMaster
 {
     /// <summary>

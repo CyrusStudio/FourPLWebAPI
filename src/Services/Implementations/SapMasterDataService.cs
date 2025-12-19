@@ -1,6 +1,7 @@
 using FourPLWebAPI.Infrastructure.Abstractions;
 using FourPLWebAPI.Models;
 using FourPLWebAPI.Services.Abstractions;
+using System.Linq;
 
 namespace FourPLWebAPI.Services.Implementations;
 
@@ -292,10 +293,10 @@ public class SapMasterDataService(
     {
         return fileType switch
         {
-            "Customer" => await ProcessFileAsync<Models.CustomerMaster>(fileType, filePath, "Customer"),
-            "Material" => await ProcessFileAsync<Models.MaterialMaster>(fileType, filePath, "Material"),
-            "Price" => await ProcessFileAsync<Models.PriceMaster>(fileType, filePath, "Price"),
-            "Sales" => await ProcessFileAsync<Models.SalesMaster>(fileType, filePath, "Sales"),
+            "Customer" => await ProcessFileAsync<Models.CustomerMaster>(fileType, filePath),
+            "Material" => await ProcessFileAsync<Models.MaterialMaster>(fileType, filePath),
+            "Price" => await ProcessFileAsync<Models.PriceMaster>(fileType, filePath),
+            "Sales" => await ProcessFileAsync<Models.SalesMaster>(fileType, filePath),
             _ => LogUnsupportedTypeAndReturnFalse(fileType)
         };
     }
@@ -319,15 +320,14 @@ public class SapMasterDataService(
     /// 失敗時產生錯誤 Log 檔案
     /// </summary>
     /// <typeparam name="T">Model 類型 (需標註 SapMasterDataAttribute)</typeparam>
-    /// <param name="fileType">檔案類型 (用於取得失敗資料夾路徑)</param>
+    /// <param name="fileType">檔案類型 (用於取得路徑與記錄)</param>
     /// <param name="filePath">XML 檔案路徑</param>
-    /// <param name="typeName">類型名稱 (用於記錄)</param>
     /// <returns>處理是否成功</returns>
-    protected virtual async Task<bool> ProcessFileAsync<T>(string fileType, string filePath, string typeName) where T : class, new()
+    protected virtual async Task<bool> ProcessFileAsync<T>(string fileType, string filePath) where T : class, new()
     {
         try
         {
-            _logger.LogInformation("開始處理 {TypeName} 檔案: {FilePath}", typeName, filePath);
+            _logger.LogInformation("開始處理 {FileType} 檔案: {FilePath}", fileType, filePath);
 
             // 讀取 XML 檔案
             var data = await _masterDataRepository.ReadFromXmlAsync<T>(filePath);
@@ -335,22 +335,38 @@ public class SapMasterDataService(
 
             if (dataList.Count == 0)
             {
-                _logger.LogWarning("{TypeName} 檔案無有效資料: {FilePath}", typeName, filePath);
+                _logger.LogWarning("{FileType} 檔案無有效資料: {FilePath}", fileType, filePath);
                 return true; // 空檔案視為成功
+            }
+
+            // 如果是 Price 類型，執行價格換算邏輯
+            if (fileType == "Price")
+            {
+                foreach (var item in dataList.Cast<Models.PriceMaster>())
+                {
+                    if (decimal.TryParse(item.ConditionPriceUnit, out var unit) && unit != 0 && unit != 1)
+                    {
+                        if (decimal.TryParse(item.InvoicePrice, out var invoicePrice))
+                            item.InvoicePrice = (invoicePrice / unit).ToString("F4");
+
+                        if (decimal.TryParse(item.FixedPrice, out var fixedPrice))
+                            item.FixedPrice = (fixedPrice / unit).ToString("F4");
+                    }
+                }
             }
 
             // 使用 TRUNCATE + Bulk Insert 方法 (全量資料匯入)
             var result = await _masterDataRepository.TruncateAndBulkInsertAsync(dataList);
 
-            _logger.LogInformation("{TypeName} 檔案處理完成: {FilePath}, 成功 {SuccessCount} 筆, 失敗 {FailedCount} 筆",
-                typeName, filePath, result.SuccessCount, result.FailedCount);
+            _logger.LogInformation("{FileType} 檔案處理完成: {FilePath}, 成功 {SuccessCount} 筆, 失敗 {FailedCount} 筆",
+                fileType, filePath, result.SuccessCount, result.FailedCount);
 
             // 如果有錯誤，產生錯誤 Log 檔案 (放到失敗資料夾)
             if (result.FailedItems.Count > 0)
             {
                 var section = _processingSection.GetSection(fileType);
                 var failPath = section["Fail"] ?? "";
-                await WriteErrorLogAsync(filePath, typeName, result, failPath);
+                await WriteErrorLogAsync(filePath, fileType, result, failPath);
                 return false; // 有錯誤則視為失敗
             }
 
@@ -358,7 +374,7 @@ public class SapMasterDataService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{TypeName} 檔案處理失敗: {FilePath}", typeName, filePath);
+            _logger.LogError(ex, "{FileType} 檔案處理失敗: {FilePath}", fileType, filePath);
             return false;
         }
     }
@@ -367,10 +383,10 @@ public class SapMasterDataService(
     /// 產生錯誤 Log 檔案
     /// </summary>
     /// <param name="originalFilePath">原始 XML 檔案路徑</param>
-    /// <param name="typeName">類型名稱</param>
+    /// <param name="fileType">檔案類型</param>
     /// <param name="result">處理結果</param>
     /// <param name="failPath">失敗資料夾路徑</param>
-    private async Task WriteErrorLogAsync(string originalFilePath, string typeName,
+    private async Task WriteErrorLogAsync(string originalFilePath, string fileType,
         FourPLWebAPI.Infrastructure.Abstractions.UpsertBatchResult result, string failPath)
     {
         try
@@ -387,7 +403,7 @@ public class SapMasterDataService(
             var logFilePath = Path.Combine(directory, logFileName);
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"=== {typeName} 處理錯誤報告 ===");
+            sb.AppendLine($"=== {fileType} 處理錯誤報告 ===");
             sb.AppendLine($"原始檔案: {originalFilePath}");
             sb.AppendLine($"處理時間: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine($"總筆數: {result.TotalCount}");
