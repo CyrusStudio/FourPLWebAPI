@@ -1,5 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Hangfire;
+using Hangfire.Server;
+using Serilog;
 
 namespace FourPLWebAPI.Jobs.Infrastructure;
 
@@ -22,7 +25,9 @@ public class JobExecutor(IServiceProvider serviceProvider, ILogger<JobExecutor> 
     /// 透過類型名稱執行 Job
     /// </summary>
     /// <param name="jobTypeName">完整類型名稱或別名</param>
-    public async Task ExecuteAsync(string jobTypeName)
+    /// <param name="context">Hangfire 執行內容</param>
+    [JobDisplayName("{0}")]
+    public async Task ExecuteAsync(string jobTypeName, PerformContext? context = null)
     {
         _logger.LogInformation("開始執行 Job: {JobType}", jobTypeName);
 

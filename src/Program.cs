@@ -8,6 +8,8 @@ using FourPLWebAPI.Services.Abstractions;
 using FourPLWebAPI.Services.Implementations;
 using Hangfire;
 using Hangfire.SqlServer;
+using Hangfire.Console;
+using Hangfire.Console.Extensions.Serilog;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -33,12 +35,14 @@ public class Program
             .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
             .MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Information)
             .Enrich.FromLogContext()
+            .Enrich.WithHangfireContext()
             .WriteTo.Console()
             .WriteTo.File(
                 path: "logs/fourplwebapi-.log",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Hangfire()
             .CreateLogger();
 
         try
@@ -154,7 +158,8 @@ public class Program
                         UseRecommendedIsolationLevel = true,
                         DisableGlobalLocks = true,
                         SchemaName = "HangFire"
-                    }));
+                    })
+                    .UseConsole());
 
                 // Hangfire Server
                 builder.Services.AddHangfireServer(options =>
