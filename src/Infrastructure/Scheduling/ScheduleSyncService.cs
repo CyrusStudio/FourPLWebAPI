@@ -165,7 +165,7 @@ public class ScheduleSyncService : IHostedService, IDisposable
             // 使用 Hangfire 註冊排程，呼叫 JobExecutor 執行 Job
             RecurringJob.AddOrUpdate<FourPLWebAPI.Jobs.Infrastructure.JobExecutor>(
                 config.JobId,
-                executor => executor.ExecuteAsync(config.JobType, null),
+                executor => executor.ExecuteAsync(config.JobType),
                 config.CronExpression,
                 new RecurringJobOptions
                 {
