@@ -126,40 +126,53 @@ public class SapMasterDataRepository(
             await _sqlHelper.ExecuteWithConnectionAsync(createStagingSql, null, ConnectionName);
             _logger.LogDebug("已建立 Staging 表: {StagingTable}", stagingTableName);
 
-            // 步驟 2：嘗試 Bulk Insert 到 Staging 表
-            bool bulkInsertSuccess = false;
             try
             {
-                var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, dataList, ConnectionName);
-                bulkInsertSuccess = true;
-                _logger.LogDebug("Bulk Insert 到 Staging 表成功，共 {Count} 筆", insertedCount);
+                // 步驟 2：嘗試 Bulk Insert 到 Staging 表
+                bool bulkInsertSuccess = false;
+                try
+                {
+                    var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, dataList, ConnectionName);
+                    bulkInsertSuccess = true;
+                    _logger.LogDebug("Bulk Insert 到 Staging 表成功，共 {Count} 筆", insertedCount);
+                }
+                catch (Exception bulkEx)
+                {
+                    _logger.LogWarning(bulkEx, "Bulk Insert 失敗，降級為逐筆處理來找出問題筆");
+
+                    // 清空 Staging 表準備逐筆處理
+                    await _sqlHelper.ExecuteWithConnectionAsync($"TRUNCATE TABLE {stagingTableName}", null, ConnectionName);
+
+                    // 逐筆處理找出問題筆
+                    await ProcessRowByRowAsync(stagingTableName, dataList, masterAttr, result);
+                }
+
+                // 步驟 3：如果 Bulk Insert 成功，使用 MERGE 進行全欄位比對
+                if (bulkInsertSuccess)
+                {
+                    // 建立 MERGE SQL (主鍵比對 + 欄位差異才 UPDATE)
+                    var mergeSql = BuildFullColumnMergeSql(masterAttr.TableName, stagingTableName, propertyMappings, masterAttr.PrimaryKeyProperties);
+                    _logger.LogDebug("執行 MERGE SQL: {Sql}", mergeSql);
+
+                    await _sqlHelper.ExecuteWithConnectionAsync(mergeSql, null, ConnectionName);
+
+                    result.SuccessCount = dataList.Count;
+                    _logger.LogInformation("{TypeName} MERGE 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
+                }
             }
-            catch (Exception bulkEx)
+            finally
             {
-                _logger.LogWarning(bulkEx, "Bulk Insert 失敗，降級為逐筆處理來找出問題筆");
-
-                // 清空 Staging 表準備逐筆處理
-                await _sqlHelper.ExecuteWithConnectionAsync($"TRUNCATE TABLE {stagingTableName}", null, ConnectionName);
-
-                // 逐筆處理找出問題筆
-                await ProcessRowByRowAsync(stagingTableName, dataList, masterAttr, result);
+                // 步驟 4：清理 Staging 表 (無論成功或失敗都嘗試刪除)
+                try
+                {
+                    await _sqlHelper.ExecuteWithConnectionAsync($"DROP TABLE {stagingTableName}", null, ConnectionName);
+                    _logger.LogDebug("已清理 Staging 表: {StagingTable}", stagingTableName);
+                }
+                catch (Exception dropEx)
+                {
+                    _logger.LogWarning(dropEx, "清理 Staging 表失敗: {StagingTable}", stagingTableName);
+                }
             }
-
-            // 步驟 3：如果 Bulk Insert 成功，使用 MERGE 進行全欄位比對
-            if (bulkInsertSuccess)
-            {
-                // 建立 MERGE SQL (主鍵比對 + 欄位差異才 UPDATE)
-                var mergeSql = BuildFullColumnMergeSql(masterAttr.TableName, stagingTableName, propertyMappings, masterAttr.PrimaryKeyProperties);
-                _logger.LogDebug("執行 MERGE SQL: {Sql}", mergeSql);
-
-                await _sqlHelper.ExecuteWithConnectionAsync(mergeSql, null, ConnectionName);
-
-                result.SuccessCount = dataList.Count;
-                _logger.LogInformation("{TypeName} MERGE 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
-            }
-
-            // 步驟 4：清理 Staging 表
-            await _sqlHelper.ExecuteWithConnectionAsync($"DROP TABLE {stagingTableName}", null, ConnectionName);
         }
         catch (Exception ex)
         {

@@ -9,6 +9,7 @@ using FourPLWebAPI.Services.Implementations;
 using Hangfire;
 using Hangfire.SqlServer;
 using Hangfire.Console;
+using Hangfire.Console.Extensions;
 using Hangfire.Console.Extensions.Serilog;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -38,7 +39,7 @@ public class Program
             .Enrich.WithHangfireContext()
             .WriteTo.Console()
             .WriteTo.File(
-                path: "logs/fourplwebapi-.log",
+                path: @"C:\FourPLLogs\fourplwebapi-.log",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
