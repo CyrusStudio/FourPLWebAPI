@@ -17,6 +17,7 @@ I have aligned the SAP Master Data processing logic with the old SQL trigger scr
 - **Local Testing Enhancement**: Modified `ProcessFileAsync` to skip moving files to `Success` or `Fail` folders when `IsProdMode` is `false`. This allows users to repeatedly test the same XML files without manual restoration.
 - **Data Integrity Enhancement**: Removed `.Trim()` from `SapMasterDataRepository.cs` when reading XML values. This ensures that leading and trailing spaces in the original XML are preserved, maintaining consistency with the old system's data handling.
 - **Batch Processing Optimization**: Implemented a "Last-One-Wins" deduplication logic in `SapMasterDataRepository.cs`. When a single XML batch contains multiple records with the same primary key, only the last occurrence is processed. This perfectly replicates the behavior of the old system's `INSTEAD OF INSERT` SQL triggers.
+- **XML Output Standardization**: Updated `BpmDataUploadService.cs` to ensure generated XML files strictly follow the required format: 4-space indentation, self-closing tags for empty elements (`<Tag />`), removal of the `standalone` attribute, and deterministic record sorting by FormNo and FormItem.
 
 ## Verification Results
 

@@ -276,7 +276,9 @@ public class BpmDataUploadService(
 
         try
         {
-            var data = await _sqlHelper.QueryWithConnectionAsync<dynamic>(sql, null, SapdsConnection);
+            // 加入 ORDER BY 確保順序一致
+            var orderedSql = $"{sql} ORDER BY FormNo, FormItem";
+            var data = await _sqlHelper.QueryWithConnectionAsync<dynamic>(orderedSql, null, SapdsConnection);
             var list = data.ToList();
 
             if (list.Count == 0)
@@ -286,22 +288,37 @@ public class BpmDataUploadService(
             }
 
             // 檔名格式: BPM_{處理開始時間}_{實際存檔時間}.xml
-            // 例如: BPM_20251218110005_20251218110010
             var fileName = $"BPM_{startTime:yyyyMMddHHmmss}_{DateTime.Now:yyyyMMddHHmmss}.xml";
             var fullPath = Path.Combine(targetPath, fileName);
 
             if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
 
             var doc = new XDocument(
-                new XDeclaration("1.0", "utf-8", "yes"),
+                new XDeclaration("1.0", "utf-8", null), // 移除 standalone="yes"
                 new XElement("root",
                     list.Select(row => new XElement("BPMDataTrans",
-                        ((IDictionary<string, object>)row).Select(pair => new XElement(pair.Key, pair.Value))
+                        ((IDictionary<string, object>)row).Select(pair =>
+                        {
+                            // 將空字串轉換為 null，以生成 self-closing tags <Tag />
+                            var value = pair.Value?.ToString();
+                            return new XElement(pair.Key, string.IsNullOrEmpty(value) ? null : value);
+                        })
                     ))
                 )
             );
 
-            doc.Save(fullPath);
+            // 使用 XmlWriterSettings 設定縮排 (4 spaces)
+            var settings = new System.Xml.XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = "    ",
+                Encoding = new System.Text.UTF8Encoding(false) // UTF-8 without BOM
+            };
+
+            using (var writer = System.Xml.XmlWriter.Create(fullPath, settings))
+            {
+                doc.Save(writer);
+            }
             producedFiles.Add(fileName);
             _logger.LogInformation("場景 {Scenario}: 已產生合併 XML {FileName}，共 {Count} 筆資料", scenario, fileName, list.Count);
 
