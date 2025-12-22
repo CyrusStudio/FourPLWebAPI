@@ -63,7 +63,7 @@ public class SapMasterDataRepository(
                             continue;
                         }
 
-                        var value = row.Element(mapping.XmlField)?.Value?.Trim() ?? "";
+                        var value = row.Element(mapping.XmlField)?.Value ?? "";
 
                         // 處理布林旗標轉換：X → 1，其他 → 0
                         if (mapping.IsBooleanFlag)
@@ -114,10 +114,15 @@ public class SapMasterDataRepository(
         var masterAttr = GetCachedMasterAttribute(type, typeName);
         var propertyMappings = GetCachedPropertyMappings(type, typeName);
 
+        // 步驟 0：去重 (後蓋前)，模擬舊系統 INSTEAD OF INSERT 逐筆處理且後者蓋掉前者的行為
+        var uniqueData = DeduplicateData(dataList, masterAttr.PrimaryKeyProperties, propertyMappings);
+        var finalData = uniqueData.ToList();
+
         // 使用正式 Staging 表 (不是暫存表) 以便跨連線存取
         var stagingTableName = $"{masterAttr.TableName}_Staging_{DateTime.Now:yyyyMMddHHmmss}";
 
-        _logger.LogInformation("開始處理 {TypeName}，共 {Count} 筆", type.Name, dataList.Count);
+        _logger.LogInformation("開始處理 {TypeName}，共 {Count} 筆 (去重後 {UniqueCount} 筆)",
+            type.Name, dataList.Count, finalData.Count);
 
         try
         {
@@ -132,7 +137,7 @@ public class SapMasterDataRepository(
                 bool bulkInsertSuccess = false;
                 try
                 {
-                    var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, dataList, ConnectionName);
+                    var insertedCount = await _sqlHelper.BulkInsertAsync(stagingTableName, finalData, ConnectionName);
                     bulkInsertSuccess = true;
                     _logger.LogDebug("Bulk Insert 到 Staging 表成功，共 {Count} 筆", insertedCount);
                 }
@@ -144,7 +149,7 @@ public class SapMasterDataRepository(
                     await _sqlHelper.ExecuteWithConnectionAsync($"TRUNCATE TABLE {stagingTableName}", null, ConnectionName);
 
                     // 逐筆處理找出問題筆
-                    await ProcessRowByRowAsync(stagingTableName, dataList, masterAttr, result);
+                    await ProcessRowByRowAsync(stagingTableName, finalData, masterAttr, result);
                 }
 
                 // 步驟 3：如果 Bulk Insert 成功，使用 MERGE 進行全欄位比對
@@ -156,7 +161,7 @@ public class SapMasterDataRepository(
 
                     await _sqlHelper.ExecuteWithConnectionAsync(mergeSql, null, ConnectionName);
 
-                    result.SuccessCount = dataList.Count;
+                    result.SuccessCount = finalData.Count;
                     _logger.LogInformation("{TypeName} MERGE 處理完成，共 {Count} 筆", type.Name, result.SuccessCount);
                 }
             }
@@ -328,6 +333,30 @@ public class SapMasterDataRepository(
     {
         var prop = typeof(T).GetProperty(pkPropertyName);
         return prop?.GetValue(item);
+    }
+
+    /// <summary>
+    /// 資料去重 (後蓋前)
+    /// </summary>
+    private IEnumerable<T> DeduplicateData<T>(List<T> data, string[] primaryKeyColumns, List<PropertyMapping> mappings) where T : class
+    {
+        if (data.Count <= 1) return data;
+
+        var pkMappings = mappings.Where(m => primaryKeyColumns.Contains(m.DbColumn)).ToList();
+
+        // 使用 Dictionary 進行去重，Key 為複合主鍵組合成的字串
+        var uniqueItems = new Dictionary<string, T>();
+
+        foreach (var item in data)
+        {
+            var keyParts = pkMappings.Select(m => m.Property.GetValue(item)?.ToString() ?? "NULL");
+            var key = string.Join("|", keyParts);
+
+            // 如果 Key 已存在，Dictionary 的 indexer 就會直接覆蓋 (後蓋前)
+            uniqueItems[key] = item;
+        }
+
+        return uniqueItems.Values;
     }
 
     #region 快取取得方法

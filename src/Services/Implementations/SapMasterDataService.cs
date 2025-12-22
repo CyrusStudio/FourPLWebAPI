@@ -238,24 +238,40 @@ public class SapMasterDataService(
 
             if (processSuccess)
             {
-                // 處理成功，移動到成功資料夾
-                var destPath = Path.Combine(successPath, fileName);
-                await MoveFileAsync(filePath, destPath);
-
+                // 處理成功
                 result.Success = true;
-                result.DestinationPath = destPath;
-                _logger.LogInformation("檔案處理成功: {FileName} -> {DestPath}", fileName, successPath);
+
+                if (IsProdMode)
+                {
+                    // 僅在正式模式移動到成功資料夾
+                    var destPath = Path.Combine(successPath, fileName);
+                    await MoveFileAsync(filePath, destPath);
+                    result.DestinationPath = destPath;
+                    _logger.LogInformation("檔案處理成功 (已移動): {FileName} -> {DestPath}", fileName, successPath);
+                }
+                else
+                {
+                    _logger.LogInformation("【SAFETY KEEP】檔案處理成功 (不移動): {FileName}", fileName);
+                }
             }
             else
             {
-                // 處理失敗，移動到失敗資料夾
-                var destPath = Path.Combine(failPath, fileName);
-                await MoveFileAsync(filePath, destPath);
-
+                // 處理失敗
                 result.Success = false;
                 result.ErrorMessage = "檔案處理失敗";
-                result.DestinationPath = destPath;
-                _logger.LogWarning("檔案處理失敗: {FileName} -> {DestPath}", fileName, failPath);
+
+                if (IsProdMode)
+                {
+                    // 僅在正式模式移動到失敗資料夾
+                    var destPath = Path.Combine(failPath, fileName);
+                    await MoveFileAsync(filePath, destPath);
+                    result.DestinationPath = destPath;
+                    _logger.LogWarning("檔案處理失敗 (已移動): {FileName} -> {DestPath}", fileName, failPath);
+                }
+                else
+                {
+                    _logger.LogWarning("【SAFETY KEEP】檔案處理失敗 (不移動): {FileName}", fileName);
+                }
             }
         }
         catch (Exception ex)
@@ -264,16 +280,19 @@ public class SapMasterDataService(
             result.ErrorMessage = ex.Message;
             _logger.LogError(ex, "處理檔案時發生例外: {FileName}", fileName);
 
-            // 嘗試移動到失敗資料夾
+            // 嘗試移動到失敗資料夾 (僅在正式模式)
             try
             {
-                var section = _processingSection.GetSection(fileType);
-                var failPath = section["Fail"] ?? "";
-                if (!string.IsNullOrEmpty(failPath))
+                if (IsProdMode)
                 {
-                    var destPath = Path.Combine(failPath, fileName);
-                    await MoveFileAsync(filePath, destPath);
-                    result.DestinationPath = destPath;
+                    var section = _processingSection.GetSection(fileType);
+                    var failPath = section["Fail"] ?? "";
+                    if (!string.IsNullOrEmpty(failPath))
+                    {
+                        var destPath = Path.Combine(failPath, fileName);
+                        await MoveFileAsync(filePath, destPath);
+                        result.DestinationPath = destPath;
+                    }
                 }
             }
             catch
@@ -344,13 +363,39 @@ public class SapMasterDataService(
             {
                 foreach (var item in dataList.Cast<Models.PriceMaster>())
                 {
-                    if (decimal.TryParse(item.ConditionPriceUnit, out var unit) && unit != 0 && unit != 1)
+                    if (decimal.TryParse(item.ConditionPriceUnit, out var unit) && unit != 0)
                     {
                         if (decimal.TryParse(item.InvoicePrice, out var invoicePrice))
                             item.InvoicePrice = (invoicePrice / unit).ToString("F4");
 
                         if (decimal.TryParse(item.FixedPrice, out var fixedPrice))
                             item.FixedPrice = (fixedPrice / unit).ToString("F4");
+                    }
+                }
+            }
+            // 如果是 Customer 類型，執行信用額度換算邏輯 (除以 10000)
+            else if (fileType == "Customer")
+            {
+                foreach (var item in dataList.Cast<Models.CustomerMaster>())
+                {
+                    if (decimal.TryParse(item.CreditLimit, out var limit))
+                    {
+                        item.CreditLimit = (limit / 10000).ToString("F4");
+                    }
+                }
+            }
+            // 如果是 Sales 類型，執行區域與員編轉換
+            else if (fileType == "Sales")
+            {
+                foreach (var item in dataList.Cast<Models.SalesMaster>())
+                {
+                    // 固定區域為 TW
+                    item.District = "TW";
+
+                    // 員編取子字串 (從第 4 位開始取 5 位，例如 000012345 -> 01234)
+                    if (item.EmployeeID.Length >= 8)
+                    {
+                        item.EmployeeID = item.EmployeeID.Substring(3, 5);
                     }
                 }
             }
